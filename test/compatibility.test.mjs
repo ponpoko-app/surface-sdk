@@ -177,3 +177,15 @@ test("invalid timer configuration fails before a transport is created", () => {
     assert.throws(() => createSurfaceClient({ view: "frame", transport: wire(), timeoutMs }), { code: "invalid_input" });
   }
 });
+
+test("the checker CLI validates and refuses bundles through a symlinked SDK path", async () => {
+  await fixture(async directory => {
+    const alias = resolve(directory, "sdk-alias");
+    await symlink(root, alias, "dir");
+    const command = resolve(alias, "scripts/check-surface.mjs");
+    const report = JSON.parse(execFileSync(process.execPath, [command, directory], { encoding: "utf8", stdio: "pipe" }));
+    assert.equal(report.status, "offline_contract_verified");
+    await writeFile(resolve(directory, "surface.json"), JSON.stringify({ ...(await readJson(resolve(directory, "surface.json"))), entry: "missing.html" }));
+    assert.throws(() => execFileSync(process.execPath, [command, directory], { stdio: "pipe" }));
+  });
+});

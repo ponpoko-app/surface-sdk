@@ -60,7 +60,8 @@ export async function checkSurface(directory, { hostHello } = {}) {
   return { status: "offline_contract_verified", surface_id: manifest.id, samples, sdk_ai_contract: CONTRACT, host: compatibility ?? "unmeasured", host_evidence: compatibility ? "captured_descriptor_only" : "unmeasured", paid_requests: 0, inference: "unmeasured", visual: "unmeasured" };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+const invoked = process.argv[1] && await realpath(resolve(process.argv[1])).catch(() => null);
+if (invoked && import.meta.url === pathToFileURL(invoked).href) {
   try {
     const args = process.argv.slice(2);
     if (!args[0] || args.length !== (args[1] === "--host-hello" ? 3 : 1)) throw new Error("Usage: node scripts/check-surface.mjs <bundle> [--host-hello <captured-json>]");

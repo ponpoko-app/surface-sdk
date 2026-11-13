@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from "node:util";
 import { pathToFileURL } from "node:url";
 import { SCHEMA, CONTRACT, validateSchema } from "../host-ai.mjs";
 import { checkHost } from "../surface.mjs";
+import { checkSecrets } from "./secrets.mjs";
 
 async function json(path) { return JSON.parse(await readFile(path, "utf8")); }
 
@@ -56,6 +57,7 @@ export async function checkSurface(directory, { hostHello } = {}) {
       samples = requests.length;
     }
   }
+  await checkSecrets(root);
   const compatibility = hostHello ? checkHost(hostHello, { ai: manifest.requires?.ai != null }) : null;
   return { status: "offline_contract_verified", surface_id: manifest.id, samples, sdk_ai_contract: CONTRACT, host: compatibility ?? "unmeasured", host_evidence: compatibility ? "captured_descriptor_only" : "unmeasured", paid_requests: 0, inference: "unmeasured", visual: "unmeasured" };
 }

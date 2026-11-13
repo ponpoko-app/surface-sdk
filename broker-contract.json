@@ -1,0 +1,46 @@
+{
+  "protocol": 1,
+  "channel": "ponpoko.surface.v1",
+  "operations": {
+    "host.platform": [
+      "ai.request",
+      "protocol.info",
+      "providers.list",
+      "attachments.pick",
+      "attachments.read",
+      "attachments.paste-image",
+      "files.save",
+      "preferences.list",
+      "settings.open",
+      "link.open"
+    ],
+    "host.work": [
+      "list",
+      "get",
+      "events.subscribe",
+      "events.unsubscribe",
+      "instruction.append",
+      "pause",
+      "resume",
+      "stop"
+    ],
+    "host.surface": [
+      "tool.file",
+      "tool.paste",
+      "backend.call"
+    ]
+  },
+  "errors": [
+    "malformed_request",
+    "unknown_operation",
+    "protocol_mismatch",
+    "unregistered_frame",
+    "stale_view",
+    "forbidden_scope",
+    "not_found",
+    "invalid_input",
+    "cursor_expired",
+    "budget_exhausted",
+    "host_unavailable"
+  ]
+}

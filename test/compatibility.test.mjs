@@ -1,0 +1,179 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFile, writeFile, mkdtemp, cp, rm, symlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { createSurfaceClient, checkHost, parentTransport } from "../surface.mjs";
+import { SCHEMA, CONTRACT, createHostAi } from "../host-ai.mjs";
+import { BROKER_CHANNEL, OPERATIONS } from "../protocol.mjs";
+import { checkSurface } from "../scripts/check-surface.mjs";
+
+const root = fileURLToPath(new URL("../", import.meta.url));
+const readJson = async path => JSON.parse(await readFile(path, "utf8"));
+const hello = { channel: BROKER_CHANNEL, view: "frame", control: "ponpoko.host.hello", protocol: 1, contracts: { ai: CONTRACT } };
+
+function wire() {
+  const listeners = new Set();
+  const sent = [];
+  return {
+    sent,
+    post: value => sent.push(value),
+    subscribe(handler) { listeners.add(handler); return () => listeners.delete(handler); },
+    deliver(value) { for (const handler of listeners) handler(value); },
+  };
+}
+
+async function readyClient(timeoutMs = 30) {
+  const transport = wire();
+  const client = createSurfaceClient({ view: "frame", transport, timeoutMs });
+  const ready = client.ready();
+  transport.deliver(hello);
+  await ready;
+  return { client, transport };
+}
+
+async function fixture(run) {
+  const directory = await mkdtemp(join(tmpdir(), "ponpoko-sdk-"));
+  try { await cp(resolve(root, "examples/hello"), directory, { recursive: true }); await run(directory); }
+  finally { await rm(directory, { recursive: true, force: true }); }
+}
+
+test("every public asset has the digest recorded in this SDK snapshot", async () => {
+  const snapshot = await readJson(resolve(root, "compatibility.json"));
+  for (const [name, expected] of Object.entries(snapshot.assets)) {
+    assert.equal(createHash("sha256").update(await readFile(resolve(root, name))).digest("hex"), expected, name);
+  }
+  assert.deepEqual(snapshot.ai, CONTRACT);
+  assert.equal(snapshot.protocol, hello.protocol);
+  assert.deepEqual((await readJson(resolve(root, "broker-contract.json"))).operations, OPERATIONS);
+  assert.deepEqual(await readJson(resolve(root, "ai-contract.json")), SCHEMA);
+});
+
+test("protocol and AI digest mismatches fail without model calls", () => {
+  assert.throws(() => checkHost({ ...hello, protocol: 2 }), { code: "protocol_mismatch" });
+  assert.throws(() => checkHost({ ...hello, contracts: { ai: { ...CONTRACT, schema_sha256: "changed" } } }, { ai: true }), { code: "ai_contract_mismatch" });
+  assert.equal(checkHost(hello, { ai: true }).paid_requests, 0);
+});
+
+test("browser transport rejects a different message source", () => {
+  let deliver;
+  const parent = { postMessage() {} };
+  const frame = { parent, addEventListener(_, listener) { deliver = listener; }, removeEventListener() {} };
+  let received = 0;
+  const dispose = parentTransport(frame).subscribe(() => received++);
+  deliver({ source: {}, data: hello });
+  assert.equal(received, 0);
+  deliver({ source: parent, data: hello });
+  assert.equal(received, 1);
+  dispose();
+});
+
+test("calls wait for hello and ignore stale views and unrelated request ids", async () => {
+  const transport = wire();
+  const client = createSurfaceClient({ view: "frame", transport, timeoutMs: 100 });
+  const call = client.backend("app.info");
+  assert.equal(transport.sent.length, 1);
+  transport.deliver({ ...hello, view: "other" });
+  assert.equal(transport.sent.length, 1);
+  transport.deliver(hello);
+  await new Promise(resolve => setTimeout(resolve, 0));
+  const request = transport.sent.at(-1);
+  assert.equal(request.namespace, "host.surface");
+  transport.deliver({ ...request, view: "other", ok: true, result: "wrong" });
+  transport.deliver({ ...request, request_id: "other", ok: true, result: "wrong" });
+  transport.deliver({ ...request, ok: true, result: "right" });
+  assert.equal(await call, "right");
+  client.dispose();
+});
+
+test("Host scope errors remain typed and unknown operations are rejected locally", async () => {
+  const { client, transport } = await readyClient();
+  await assert.rejects(client.call("host.platform", "invented"), { code: "unknown_operation" });
+  const call = client.backend("app.info");
+  await new Promise(resolve => setTimeout(resolve, 0));
+  const request = transport.sent.at(-1);
+  transport.deliver({ ...request, ok: false, error: { code: "forbidden_scope", message: "outside this frame", retryable: false } });
+  await assert.rejects(call, error => error.code === "forbidden_scope" && error.request_id === request.request_id);
+  client.dispose();
+});
+
+test("mutation timeouts have unknown outcomes and are never retried", async () => {
+  const { client, transport } = await readyClient();
+  await assert.rejects(client.backend("app.write"), { code: "unknown_outcome" });
+  assert.equal(transport.sent.filter(row => row.operation === "backend.call").length, 1);
+  await assert.rejects(client.call("host.platform", "protocol.info"), { code: "host_unavailable" });
+  client.dispose();
+});
+
+test("disposal rejects both an unfinished handshake and a pending mutation", async () => {
+  const first = createSurfaceClient({ view: "frame", transport: wire() });
+  const ready = first.ready();
+  first.dispose();
+  await assert.rejects(ready, { code: "host_unavailable" });
+  const { client } = await readyClient();
+  const call = client.backend("app.write");
+  await new Promise(resolve => setTimeout(resolve, 0));
+  client.dispose();
+  await assert.rejects(call, { code: "unknown_outcome" });
+  await assert.rejects(client.ready(), { code: "host_unavailable" });
+});
+
+test("malformed inference never reaches the transport", async () => {
+  let calls = 0;
+  const ai = createHostAi(async () => { calls++; return {}; });
+  await assert.rejects(ai.invoke({ ...SCHEMA.examples[0].input, provider_id: "not-a-contract-field" }), { code: "invalid_input" });
+  assert.equal(calls, 0);
+});
+
+test("the standalone example validates without a Host checkout or credentials", async () => {
+  const report = await checkSurface(resolve(root, "examples/hello"));
+  assert.equal(report.status, "offline_contract_verified");
+  assert.equal(report.host, "unmeasured");
+  assert.equal(report.inference, "unmeasured");
+  assert.equal(report.paid_requests, 0);
+});
+
+test("manifest violations, missing files and escaped entry paths fail preflight", async () => {
+  await fixture(async directory => {
+    const path = resolve(directory, "surface.json");
+    const manifest = await readJson(path);
+    for (const patch of [{ id: "surfaces" }, { permissions: ["extra"] }, { methods: ["app.info"] }, { methods: null }, { entry: "../outside.html" }, { entry: "missing.html" }]) {
+      await writeFile(path, JSON.stringify({ ...manifest, ...patch }));
+      await assert.rejects(checkSurface(directory));
+    }
+    await writeFile(path, JSON.stringify(manifest));
+    await rm(resolve(directory, "index.html"));
+    await symlink(resolve(root, "examples/hello/index.html"), resolve(directory, "index.html"));
+    await assert.rejects(checkSurface(directory), /leaves the bundle/);
+  });
+});
+
+test("AI fixtures survive refresh while invalid requests and schema drift fail", async () => {
+  await fixture(async directory => {
+    const manifest = await readJson(resolve(directory, "surface.json"));
+    manifest.requires = { ai: CONTRACT.version };
+    await writeFile(resolve(directory, "surface.json"), JSON.stringify(manifest));
+    const copy = () => execFileSync(process.execPath, [resolve(root, "scripts/copy-ai-assets.mjs"), directory], { stdio: "pipe" });
+    copy();
+    const sample = { ...SCHEMA.examples[0].input, request_id: "my-workflow" };
+    await writeFile(resolve(directory, "ai-requests.json"), JSON.stringify([sample]));
+    copy();
+    assert.equal((await readJson(resolve(directory, "ai-requests.json")))[0].request_id, "my-workflow");
+    assert.equal((await checkSurface(directory)).samples, 1);
+    await writeFile(resolve(directory, "ai-requests.json"), JSON.stringify([{ ...sample, provider_id: "invalid" }]));
+    await assert.rejects(checkSurface(directory), /provider_id/);
+    await writeFile(resolve(directory, "ai-requests.json"), JSON.stringify([sample]));
+    await writeFile(resolve(directory, "ai-contract.json"), JSON.stringify({ ...SCHEMA, contract_version: 99 }));
+    await assert.rejects(checkSurface(directory), /ai_contract_mismatch/);
+    assert.throws(copy, /differs/);
+  });
+});
+
+test("invalid timer configuration fails before a transport is created", () => {
+  for (const timeoutMs of [0, -1, NaN, Infinity, 2147483648]) {
+    assert.throws(() => createSurfaceClient({ view: "frame", transport: wire(), timeoutMs }), { code: "invalid_input" });
+  }
+});

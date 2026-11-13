@@ -1,0 +1,7 @@
+{
+  "id": "sdk-hello",
+  "name": "SDK Hello",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "contributes": [{ "slot": "nav", "title": "SDK Hello", "icon": "generic" }]
+}

@@ -1,0 +1,37 @@
+{
+  "sdk_version": "1.0.0",
+  "host_source_version": "0.19.10",
+  "protocol": 1,
+  "ai": {
+    "version": 1,
+    "schema_sha256": "d7f73a2bf923779ce0612ba2ed918503843a31fc96a8bdd2b2725f9bcda758cd"
+  },
+  "assets": {
+    "README.md": "80366fb2e725a389a84adf98cc67294ac4548b903ea897a1a6eacb3b52f7b289",
+    "SKILL.md": "64a16892509f737ae9c71f437e6128be012959c74630e2d11144372f046b98c0",
+    "docs/compatibility.md": "3a531abe20c151c60ea04f3971d04011b1778dc35adb804a0a6b7663f95741fa",
+    "docs/protocol.md": "6feb586c4fcb2281fe4bc46fa6669e0c8efd87db57c74e1051dda763cb059bb8",
+    "examples/hello/index.html": "8c9827e36a1262418f487cb098f5bc5217b3a2118acbbdc91a1be2719cfee567",
+    "examples/hello/main.mjs": "ed3239aeb81b889c61659a8e211edf384d31d1067d1c890166d66f0e7a26ed86",
+    "examples/hello/surface.json": "361829602d18c3c8285b32864783dc4d70cb6be569633329bd1cf749c259ca11",
+    "package.json": "15b7be3d432d7f9e6a1fca3688428b46d7640abd87d6b7563192384cf1ec9830",
+    "scripts/check-surface.mjs": "30ae7fbf49e3d9aa9a983eed8ee104280b79af61dd446c7c201a03e54e3cef4b",
+    "scripts/copy-ai-assets.mjs": "61afb8550d20d677f627ecf28a54fa426aa32def73af7df8212502d759e5f504",
+    "surface.d.mts": "3fa9bec40aacb5d0621ef1fdbbea7cec0e6aae88eda2ea3492852db80d9c8fdc",
+    "surface.mjs": "d4c00660bf6f997a82fdf610224b8dba320ae2258dcdd78eccb0b2a4a4e90d02",
+    "test/compatibility.test.mjs": "ab8b96c40bfabff5b7877c7e43a4b9686ff660642dee29c31ffe8d8aa43ad59c",
+    ".gitignore": "df693603dd3617dd2c71a72279dec50a5a63d2eecd30e76d68bc866aad8a4f49",
+    "host-ai.mjs": "558a05c06d4c9530da8aa591f8c21aec35ea1ceaff54ecab179206e68780027a",
+    "host-ai.d.ts": "1dc5e1d4012bd322e47932e077945a6dee9d15f64bdaeb7739d6481240761bad",
+    "host-ai.d.mts": "1dc5e1d4012bd322e47932e077945a6dee9d15f64bdaeb7739d6481240761bad",
+    "host-ai.backend.mjs": "50a0adce1251df806d965f230fa9c30c2051ee0b600bec7c4289eee3ab321093",
+    "host-ai.backend.d.mts": "011fd30c8fb82d7e496071e2e292b46a5948a525382e877f4381049e583c02ba",
+    "ai-contract.json": "d7f73a2bf923779ce0612ba2ed918503843a31fc96a8bdd2b2725f9bcda758cd",
+    "protocol.ts": "d3c6fb36eaa3df21e7b79264cf3e4ac0dfa092ec47ea819eba839e549f9eb44c",
+    "protocol.mjs": "11ff5e29037079c9bf2da82d6abf2a5122a496d1d9b40f5652c0718af1894466",
+    "broker-contract.json": "5d5662be39fc50a666953d9a2e1c158f72746cb4a9db56acf9d9c5d30a30f065",
+    "examples/hello/sdk/surface.mjs": "d4c00660bf6f997a82fdf610224b8dba320ae2258dcdd78eccb0b2a4a4e90d02",
+    "examples/hello/sdk/protocol.mjs": "11ff5e29037079c9bf2da82d6abf2a5122a496d1d9b40f5652c0718af1894466",
+    "examples/hello/sdk/host-ai.mjs": "558a05c06d4c9530da8aa591f8c21aec35ea1ceaff54ecab179206e68780027a"
+  }
+}

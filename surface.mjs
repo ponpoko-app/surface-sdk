@@ -110,6 +110,11 @@ export function createSurfaceClient({ view = new URLSearchParams(globalThis.loca
 
   return Object.freeze({
     ready, call,
+    research: Object.freeze({ search: async input => {
+      const hello = await ready();
+      if (!hello.doors?.includes("host.platform.research.search")) throw failure("unknown_operation", "The running Host does not offer web search.");
+      return call("host.platform", "research.search", input);
+    } }),
     backend: (method, params = {}) => call("host.surface", "backend.call", { method, params }),
     checkCompatibility: async options => checkHost(await ready(), options),
     onPalette(handler) { palettes.add(handler); if (palette) handler(palette); return () => palettes.delete(handler); },

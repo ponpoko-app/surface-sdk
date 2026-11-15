@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.ponpoko.app/schemas/research.json",
+  "$defs": {
+    "Request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600,
+          "description": "Public query, at most 75 words. Privacy validation also applies."
+        },
+        "domains": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "string",
+            "maxLength": 253,
+            "pattern": "^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,63}$"
+          },
+          "description": "Hard filter: exact hostname or a subdomain. Empty or omitted means unrestricted."
+        }
+      }
+    },
+    "Result": {
+      "type": "object",
+      "required": [
+        "url",
+        "title",
+        "text",
+        "evidence_kind",
+        "published_at"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 4096,
+          "pattern": "^https?://"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000
+        },
+        "evidence_kind": {
+          "enum": [
+            "search_snippet",
+            "extracted_passage"
+          ]
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "Response": {
+      "type": "object",
+      "required": [
+        "contract_version",
+        "request_id",
+        "status",
+        "trust",
+        "retrieved_at",
+        "results"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": 1
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "status": {
+          "enum": [
+            "evidence_found",
+            "no_evidence"
+          ]
+        },
+        "trust": {
+          "const": "untrusted_web_content"
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "results": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/Result"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "no_evidence"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "results": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "results": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

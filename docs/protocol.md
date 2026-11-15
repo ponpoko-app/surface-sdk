@@ -23,6 +23,7 @@ must not consume another frame's response. There is no automatic mutation retry.
 | `host.surface / tool.file` | `{mode:"open",directory:true}` for a folder chooser; see the Host's response before using its path |
 | `host.surface / tool.paste` | `{}`; returns clipboard content through the registered frame |
 | `host.platform / protocol.info` | `{}`; returns protocol, Host version, identity and AI contract descriptor |
+| `host.platform / research.search` | `{query, domains?: string[]}`; returns Cloud search contract v1, consumes shared points, never automatically replay on timeout |
 | `host.platform / ai.request` | A validated AI envelope; prefer the generated AI SDK |
 | `host.platform / link.open` | `{href:"https://example.com"}` |
 | `host.platform / settings.open` | `{destination:"connections"}` only when that destination is supported by the running Host |

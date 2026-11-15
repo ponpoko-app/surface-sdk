@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ponpoko.app/contracts/surface-package-v1.json",
+  "title": "Ponpoko surface package metadata v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "ponpoko.surface"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    },
+    "id": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "not": {
+        "const": "surfaces"
+      }
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "bundle_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    }
+  },
+  "required": [
+    "format",
+    "spec",
+    "id",
+    "version",
+    "bundle_digest",
+    "files"
+  ],
+  "$defs": {
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format_version": {
+          "const": 1
+        },
+        "target": {
+          "type": "string",
+          "enum": [
+            "any",
+            "darwin-aarch64",
+            "darwin-x86_64",
+            "windows-aarch64",
+            "windows-x86_64",
+            "linux-aarch64",
+            "linux-x86_64"
+          ]
+        },
+        "minimum_host_version": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+        },
+        "development": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mode": {
+                  "const": "use_only"
+                }
+              },
+              "required": [
+                "mode"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "mode": {
+                  "const": "customizable"
+                },
+                "source": {
+                  "$ref": "#/$defs/source"
+                }
+              },
+              "required": [
+                "mode",
+                "source"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "format_version",
+        "target",
+        "minimum_host_version",
+        "development"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": "string",
+          "maxLength": 140,
+          "pattern": "^[a-z0-9][a-z0-9_.-]{0,79}/[a-z0-9][a-z0-9_.-]{0,79}$"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "license": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9.+-]+$"
+        },
+        "build": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "any",
+              "darwin-aarch64",
+              "darwin-x86_64",
+              "windows-aarch64",
+              "windows-x86_64",
+              "linux-aarch64",
+              "linux-x86_64"
+            ]
+          }
+        }
+      },
+      "required": [
+        "repo",
+        "commit",
+        "license",
+        "build",
+        "targets"
+      ]
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 134217728
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "executable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "bytes",
+        "sha256",
+        "executable"
+      ]
+    }
+  }
+}

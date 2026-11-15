@@ -11,7 +11,7 @@ entry/program files, rejects paths leaving the bundle, and checks the required
 AI schema and representative requests against this SDK. It reports
 `offline_contract_verified`, `host: unmeasured`, `paid_requests: 0`, and leaves
 inference and visual behavior unmeasured. This is a preflight; native install
-still enforces its filesystem, signature, size and Host-specific rules.
+still enforces its filesystem, package integrity, size and Host-specific rules.
 
 Inside an installed frame, call:
 

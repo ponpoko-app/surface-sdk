@@ -23,7 +23,7 @@ export const NAMESPACES = [HOST_PLATFORM, HOST_WORK, HOST_SURFACE]         ;
 
 
 export const PLATFORM_OPERATIONS = [
-  "ai.request", "protocol.info", "providers.list", "attachments.pick", "attachments.read", "attachments.paste-image",
+  "research.search", "ai.request", "protocol.info", "providers.list", "attachments.pick", "attachments.read", "attachments.paste-image",
   "files.save", "preferences.list", "settings.open", "link.open",
 ]         ;
 
@@ -60,11 +60,29 @@ export const ERROR_CODES = [
   "cursor_expired",
   "budget_exhausted",
   "host_unavailable",
+  "search_unavailable", "search_outcome_unknown", "search_invalid_response", "search_upstream_error",
+  "sign_in_required", "quota_exhausted", "rate_limited", "outcome_unknown",
+  "idempotency_in_progress", "idempotency_conflict", "service_budget_exhausted", "operation_disabled", "inference_disabled", "concurrency_limit",
 ]         ;
 
 
 
 const ERROR_MESSAGES                            = {
+  "search_unavailable": "Web search is unavailable",
+  "search_outcome_unknown": "Search outcome is unknown; do not repeat automatically",
+  "search_invalid_response": "Search returned unsupported evidence",
+  "search_upstream_error": "The search provider rejected the request",
+  "sign_in_required": "Sign in to Ponpoko Cloud to search",
+  "quota_exhausted": "No account points remain",
+  "rate_limited": "Search requests are arriving too quickly",
+  "outcome_unknown": "Inspect the original request before repeating",
+  "idempotency_in_progress": "The original request is still in progress",
+  "idempotency_conflict": "This request identity was used with different input",
+  "service_budget_exhausted": "The hosted service reached its budget",
+  "operation_disabled": "This service is disabled",
+  "inference_disabled": "Hosted services are disabled",
+  "concurrency_limit": "The service has reached its in-flight limit",
+
   malformed_request: "the host could not read the request",
   unknown_operation: "the host accepts no such operation",
   protocol_mismatch: "this surface and the running Ponpoko speak different protocols",

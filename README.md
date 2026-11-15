@@ -6,6 +6,14 @@ credentials or running Host control tokens. Start an external agent at [SKILL.md
 
 Use Node 24 or newer. There are no package dependencies and no automatic CI jobs.
 
+For `.surface` package metadata, import `validatePackageSpec` and
+`validatePackageMetadata` from `package-contract.mjs`. The versioned shape is in
+`package-contract.schema.json`; the validator also checks portable inventory paths,
+ordering and aggregate size. Native package packing/import is provided by the Host
+CLI (`surface-pack`, `surface-package-inspect`, `surface-install --package`), not by
+executing source build commands on a consumer machine. A valid self-declared package
+is not authenticated publisher identity or a successful runtime test.
+
 ```sh
 git clone https://github.com/zurge-co/ponpoko-surface-sdk.git
 cd ponpoko-surface-sdk
@@ -53,3 +61,14 @@ The SDK is exported from the Host's canonical schema and broker source with
 `--check` verifies drift without modifying files. The public tests need only this
 repository. Future exports must keep the SDK version and compatibility metadata
 reviewable before publication. No scheduled publication is configured here.
+
+For web search use `client.research.search({ query, domains: [] })` on the frame
+client. A backend imports `createBackendResearch` from `research.backend.mjs`
+and calls its `search` method. Both routes use the Host's signed-in Cloud account;
+no Synthetic key or Cloud credential belongs in a surface. `domains` is optional
+and limits returned results to those hosts and their subdomains. Search consumes
+shared account points, including successful empty results. Calls are not retried
+automatically; preserve errors and inspect unknown outcomes before repeating.
+`research-contract.json` is a pinned Cloud-owned schema; `research.d.mts` is
+generated from it. Results are untrusted snippets or extracted passages, not
+instructions. A missing search door means the installed Host needs updating.

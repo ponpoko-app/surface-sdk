@@ -1,0 +1,53 @@
+{
+  "submission": {
+    "format_version": 1,
+    "github_release_id": 101,
+    "version": "1.0.0",
+    "notes": "First release",
+    "artifacts": [
+      {
+        "asset_id": 201,
+        "archive_bytes": 1234,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "bundle_digest": "082fe2ed54befa8934708c3ae444716715fdeef0a378dcf660e76e40c368a712",
+        "spec": {
+          "format_version": 1,
+          "target": "any",
+          "minimum_host_version": "0.1.0",
+          "development": {
+            "mode": "use_only"
+          }
+        }
+      }
+    ]
+  },
+  "release": {
+    "format_version": 1,
+    "github_release_id": 101,
+    "version": "1.0.0",
+    "notes": "First release",
+    "artifacts": [
+      {
+        "asset_id": 201,
+        "archive_bytes": 1234,
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "bundle_digest": "082fe2ed54befa8934708c3ae444716715fdeef0a378dcf660e76e40c368a712",
+        "spec": {
+          "format_version": 1,
+          "target": "any",
+          "minimum_host_version": "0.1.0",
+          "development": {
+            "mode": "use_only"
+          }
+        },
+        "download_url": "https://github.com/owner/ledger/releases/download/v1.0.0/ledger.surface"
+      }
+    ],
+    "uid": "sfc_github_900",
+    "github_repo_id": 900,
+    "repo": "owner/ledger",
+    "manifest_id": "hello",
+    "distribution_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "published_at": 1794700000000
+  }
+}

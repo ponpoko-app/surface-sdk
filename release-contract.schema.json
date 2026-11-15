@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ponpoko.app/contracts/surface-release-v1.json",
+  "$defs": {
+    "Submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format_version",
+        "github_release_id",
+        "version",
+        "notes",
+        "artifacts"
+      ],
+      "properties": {
+        "format_version": {
+          "const": 1
+        },
+        "github_release_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          }
+        }
+      }
+    },
+    "Artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "archive_bytes",
+        "sha256",
+        "bundle_digest",
+        "spec"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "archive_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100663296
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bundle_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "spec": {
+          "$ref": "https://ponpoko.app/contracts/surface-package-v1.json#/$defs/spec"
+        }
+      }
+    },
+    "CatalogArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "archive_bytes",
+        "sha256",
+        "bundle_digest",
+        "spec",
+        "download_url"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "archive_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100663296
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bundle_digest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "spec": {
+          "$ref": "https://ponpoko.app/contracts/surface-package-v1.json#/$defs/spec"
+        },
+        "download_url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 2048,
+          "pattern": "^https://github\\.com/.+/releases/download/.+\\.surface$"
+        }
+      }
+    },
+    "CatalogRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format_version",
+        "github_release_id",
+        "version",
+        "notes",
+        "artifacts",
+        "uid",
+        "github_repo_id",
+        "repo",
+        "manifest_id",
+        "distribution_commit",
+        "published_at"
+      ],
+      "properties": {
+        "format_version": {
+          "const": 1
+        },
+        "github_release_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?(\\+[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?$"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "items": {
+            "$ref": "#/$defs/CatalogArtifact"
+          }
+        },
+        "uid": {
+          "type": "string",
+          "pattern": "^sfc_github_[1-9][0-9]*$"
+        },
+        "github_repo_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "repo": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "manifest_id": {
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "distribution_commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "published_at": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    }
+  }
+}

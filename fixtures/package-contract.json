@@ -1,0 +1,298 @@
+{
+  "valid_specs": [
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "use_only"
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "customizable",
+        "source": {
+          "repo": "alice/hello",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "license": "MIT",
+          "build": [
+            "bun",
+            "run",
+            "build"
+          ],
+          "targets": [
+            "any"
+          ]
+        }
+      }
+    }
+  ],
+  "invalid_specs": [
+    {
+      "format_version": 2,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "use_only"
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "linux-arm64",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "use_only"
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "01.0.0",
+      "development": {
+        "mode": "use_only"
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "use_only"
+      },
+      "extra": true
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "customizable"
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "use_only",
+        "source": {
+          "repo": "alice/hello",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "license": "MIT",
+          "build": [
+            "bun",
+            "run",
+            "build"
+          ],
+          "targets": [
+            "any"
+          ]
+        }
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "customizable",
+        "source": {
+          "repo": "alice/hello",
+          "commit": "abc",
+          "license": "MIT",
+          "build": [
+            "bun",
+            "run",
+            "build"
+          ],
+          "targets": [
+            "any"
+          ]
+        }
+      }
+    },
+    {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "customizable",
+        "source": {
+          "repo": "alice/hello",
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "license": "MIT",
+          "build": [
+            "bun",
+            "run",
+            "build"
+          ],
+          "targets": [
+            "any",
+            "any"
+          ]
+        }
+      }
+    }
+  ],
+  "bundle": {
+    "index.html": "<!doctype html><main>Hello</main>",
+    "surface.json": "{\"id\":\"hello\",\"name\":\"Hello\",\"version\":\"1.0.0\",\"entry\":\"index.html\",\"contributes\":[{\"slot\":\"nav\",\"title\":\"Hello\",\"icon\":\"generic\"}]}"
+  },
+  "metadata": {
+    "format": "ponpoko.surface",
+    "spec": {
+      "format_version": 1,
+      "target": "any",
+      "minimum_host_version": "0.1.0",
+      "development": {
+        "mode": "use_only"
+      }
+    },
+    "id": "hello",
+    "version": "1.0.0",
+    "bundle_digest": "082fe2ed54befa8934708c3ae444716715fdeef0a378dcf660e76e40c368a712",
+    "files": [
+      {
+        "path": "index.html",
+        "bytes": 33,
+        "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+        "executable": false
+      },
+      {
+        "path": "surface.json",
+        "bytes": 132,
+        "sha256": "1e58bbebb06f17a41e78e786f9b212febd9668ae837da6c9a272b881d2b8e2b0",
+        "executable": false
+      }
+    ]
+  },
+  "invalid_metadata_patches": [
+    {
+      "format": "other"
+    },
+    {
+      "id": "surfaces"
+    },
+    {
+      "version": "latest"
+    },
+    {
+      "extra": true
+    },
+    {
+      "files": [
+        {
+          "path": "surface.json",
+          "bytes": 68,
+          "sha256": "c9c836d1bc6a60ff7ef9615c0d38600c5fbc1ec27844659664f91c48370ebb9a",
+          "executable": false
+        },
+        {
+          "path": "index.html",
+          "bytes": 33,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "path": "index.html",
+          "bytes": 33,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        },
+        {
+          "path": "index.html",
+          "bytes": 33,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "path": "../outside",
+          "bytes": 33,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        },
+        {
+          "path": "surface.json",
+          "bytes": 68,
+          "sha256": "c9c836d1bc6a60ff7ef9615c0d38600c5fbc1ec27844659664f91c48370ebb9a",
+          "executable": false
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "path": "CON.txt",
+          "bytes": 33,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        },
+        {
+          "path": "surface.json",
+          "bytes": 68,
+          "sha256": "c9c836d1bc6a60ff7ef9615c0d38600c5fbc1ec27844659664f91c48370ebb9a",
+          "executable": false
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "path": "a?.js",
+          "bytes": 33,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        },
+        {
+          "path": "surface.json",
+          "bytes": 68,
+          "sha256": "c9c836d1bc6a60ff7ef9615c0d38600c5fbc1ec27844659664f91c48370ebb9a",
+          "executable": false
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "path": "index.html",
+          "bytes": 33,
+          "sha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "executable": false
+        },
+        {
+          "path": "surface.json",
+          "bytes": 68,
+          "sha256": "c9c836d1bc6a60ff7ef9615c0d38600c5fbc1ec27844659664f91c48370ebb9a",
+          "executable": false
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "path": "index.html",
+          "bytes": 134217729,
+          "sha256": "626b4517f512632235574176b56274a07a279586895f5aed74dffa6d3c6300d1",
+          "executable": false
+        },
+        {
+          "path": "surface.json",
+          "bytes": 68,
+          "sha256": "c9c836d1bc6a60ff7ef9615c0d38600c5fbc1ec27844659664f91c48370ebb9a",
+          "executable": false
+        }
+      ]
+    }
+  ]
+}

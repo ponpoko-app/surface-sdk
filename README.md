@@ -14,6 +14,16 @@ CLI (`surface-pack`, `surface-package-inspect`, `surface-install --package`), no
 executing source build commands on a consumer machine. A valid self-declared package
 is not authenticated publisher identity or a successful runtime test.
 
+For owner-side release protection, run
+`node release/protect-bundle.mjs <built-bundle> <new-output> <new-report.json>`.
+The pinned bundled helper needs no dependency install or Cloud request. It minifies and
+moderately obfuscates JavaScript, including inline scripts, removes maps and preserves
+required notices. Input is unchanged. Linked files, source copies, inline event handlers,
+CSS map references and asset integrity attributes that would become stale are refused.
+Keep protocol properties intact and measure the protected output before packaging;
+obfuscation does not make code unextractable. The receipt is neither signing nor a
+privacy or functionality approval. Native backend hardening is a separate build step.
+
 ```sh
 git clone https://github.com/zurge-co/ponpoko-surface-sdk.git
 cd ponpoko-surface-sdk

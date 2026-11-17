@@ -7,7 +7,7 @@
     "schema_sha256": "d7f73a2bf923779ce0612ba2ed918503843a31fc96a8bdd2b2725f9bcda758cd"
   },
   "assets": {
-    "README.md": "4b67d18b89221ade9b2f46a5101246a1372c333dbb969f96f81ac77aeb3c6805",
+    "README.md": "aee5ff1b7485af2ca90544082d27e145e5e853361fc2c097443a7c24d3caad62",
     "SKILL.md": "a73d0875873741da515715b48a8584701f824f70c1475559437c5f3fbd8f9608",
     "docs/compatibility.md": "42d685a3ed3b2dba91dbd9a034c58155ffe30c3db6b4f08a0731e9f76d9fb179",
     "docs/protocol.md": "d4412cae815570c3cdf1f719c4bc28028f53d5ab84ccbb4205aea8379214f7e9",
@@ -20,6 +20,7 @@
     "package-contract.mjs": "b63b5b6c1d29d39f2112852f9574ba6fb4af77500c037593e31a054020e52530",
     "package-contract.schema.json": "9baed4de64fb794994548db5dcd702066026ea13ad6cdfad5a52d3bec8da353c",
     "package.json": "b6df53cd965dbb4776597f753254795c910869a9a8585e837a73383bef2975e4",
+    "release/protect-bundle.mjs": "721763e871a2dcc9f2c8a21f86f89e5d533c115eabf8904b75f2a0772084d9db",
     "release-contract.d.mts": "2830cfd863261c4f002a9ffcc3a7a3e52c821354e97552632040a22d69d23091",
     "release-contract.mjs": "709f045ca6ed2c0c9a2f670ef70422867852595f86242b5088079393982a12e7",
     "release-contract.schema.json": "b052c31627fa5711170025fafbfe19b8ee8f672140630f63dfe37a49dc3bc2ce",
@@ -33,8 +34,11 @@
     "test/compatibility.test.mjs": "ef36d85715c4b77e92aac4a3a9589e884862ba9cf5a2364f102fff0089484c24",
     "test/package-contract.test.mjs": "aa2c441b6d0caef04be2ce2618ccba5eae41110cf0ab8a90717eefacc2ad390d",
     "test/release-contract.test.mjs": "f77e520eabae6f2b9124e17df32ebb61b2f56bea9332da373f947cbcf7a8cf3a",
+    "test/release-protection.test.mjs": "f1d9a3454705c3397153c839abee22219e2b401e0321005b5769cc00f14d66e3",
     "test/research.test.mjs": "05694421880232e415c22868fc51dbd504ef0b6b90ac662581dfd46ced5bc878",
     "test/secrets.test.mjs": "0c43eceec35b4c26aac304b5de963e8dec077c3f7f73331ec9bffc015569da0e",
+    "release/protection.cjs": "29313a0992e032000663ad91322a611c3ed4ace10fb48ad7eda4ced45157f44c",
+    ".gitattributes": "d71f50c4bfa0e45b0f7cf73078a0f49ac877ddb5a8c15f15c1f5d479dfff7993",
     "secret-policy.json": "05bc35a9c2355e76f29e75b8b21cd93dae6b45e41009c690c3892e7246d31ef7",
     ".gitignore": "df693603dd3617dd2c71a72279dec50a5a63d2eecd30e76d68bc866aad8a4f49",
     "research-contract.json": "e38c9421f540cc5191c186bb3d26d4467bce740ec0e136ba143f889f38072328",

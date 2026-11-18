@@ -1,0 +1,275 @@
+{
+  "contract_version": 1,
+  "plans": {
+    "public_source": {
+      "automatic_workflows": [],
+      "ci_repo": "owner/ledger",
+      "contract_version": 1,
+      "declared_targets": [
+        "any"
+      ],
+      "development": "customizable",
+      "distribution_repo": "owner/ledger",
+      "source_repo": "owner/ledger",
+      "targets": [
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "ubuntu-24.04",
+          "runtime": "unrun",
+          "target": "any"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "macos-15",
+          "runtime": "unrun",
+          "target": "darwin-aarch64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "macos-15-intel",
+          "runtime": "unrun",
+          "target": "darwin-x86_64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "windows-11-arm",
+          "runtime": "unrun",
+          "target": "windows-aarch64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "windows-latest",
+          "runtime": "unrun",
+          "target": "windows-x86_64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "ubuntu-24.04-arm",
+          "runtime": "unrun",
+          "target": "linux-aarch64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "ubuntu-24.04",
+          "runtime": "unrun",
+          "target": "linux-x86_64"
+        }
+      ],
+      "variant": "public_source",
+      "windows_tests": {
+        "default": false,
+        "input": "run_windows"
+      },
+      "workflows": [
+        {
+          "automatic": false,
+          "bytes": 2521,
+          "path": ".github/workflows/surface-build.yml",
+          "purpose": "build",
+          "sha256": "a597643ff021891385924fd7fafe4afaa4e82c301ddc59ec41862ede1cf12b86",
+          "triggers": [
+            "workflow_dispatch"
+          ]
+        },
+        {
+          "automatic": false,
+          "bytes": 1556,
+          "path": ".github/workflows/surface-check.yml",
+          "purpose": "checks",
+          "sha256": "6289acba2e39bdaa6ff192f8f949e9131829c6a52d6ac6a962fb3d55b90431f2",
+          "triggers": [
+            "workflow_dispatch"
+          ]
+        },
+        {
+          "automatic": false,
+          "bytes": 5960,
+          "path": ".github/workflows/surface-release.yml",
+          "purpose": "release",
+          "sha256": "44f79ed112a0a158af65432f757f9a5ad1f873e8294bee342eeae9472842a034",
+          "triggers": [
+            "workflow_dispatch"
+          ]
+        }
+      ],
+      "digest": "c6061640c38f69365a2cfcb948f4b19775cffd614bddba0bee1e57debb57940c"
+    },
+    "private_source_ci": {
+      "automatic_workflows": [],
+      "ci_repo": "owner/private-ledger",
+      "contract_version": 1,
+      "declared_targets": [
+        "darwin-aarch64",
+        "linux-x86_64"
+      ],
+      "development": "use_only",
+      "distribution_repo": "owner/ledger",
+      "source_repo": "owner/private-ledger",
+      "targets": [
+        {
+          "build": "unsupported",
+          "reason": "native_programs_require_native_target",
+          "runner": "ubuntu-24.04",
+          "runtime": "unsupported",
+          "target": "any"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "macos-15",
+          "runtime": "unrun",
+          "target": "darwin-aarch64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "macos-15-intel",
+          "runtime": "unrun",
+          "target": "darwin-x86_64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "windows-11-arm",
+          "runtime": "unrun",
+          "target": "windows-aarch64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "windows-latest",
+          "runtime": "unrun",
+          "target": "windows-x86_64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "ubuntu-24.04-arm",
+          "runtime": "unrun",
+          "target": "linux-aarch64"
+        },
+        {
+          "build": "prepared",
+          "reason": "",
+          "runner": "ubuntu-24.04",
+          "runtime": "unrun",
+          "target": "linux-x86_64"
+        }
+      ],
+      "variant": "private_source_ci",
+      "windows_tests": {
+        "default": false,
+        "input": "run_windows"
+      },
+      "workflows": [
+        {
+          "automatic": false,
+          "bytes": 2521,
+          "path": ".github/workflows/surface-build.yml",
+          "purpose": "build",
+          "sha256": "a597643ff021891385924fd7fafe4afaa4e82c301ddc59ec41862ede1cf12b86",
+          "triggers": [
+            "workflow_dispatch"
+          ]
+        },
+        {
+          "automatic": false,
+          "bytes": 1556,
+          "path": ".github/workflows/surface-check.yml",
+          "purpose": "checks",
+          "sha256": "6289acba2e39bdaa6ff192f8f949e9131829c6a52d6ac6a962fb3d55b90431f2",
+          "triggers": [
+            "workflow_dispatch"
+          ]
+        },
+        {
+          "automatic": false,
+          "bytes": 5960,
+          "path": ".github/workflows/surface-release.yml",
+          "purpose": "release",
+          "sha256": "44f79ed112a0a158af65432f757f9a5ad1f873e8294bee342eeae9472842a034",
+          "triggers": [
+            "workflow_dispatch"
+          ]
+        }
+      ],
+      "digest": "bd36f399c471064ee027964c810c0a269734f6eab61815f8ed7e54c199ea58cb"
+    },
+    "local_only": {
+      "automatic_workflows": [],
+      "ci_repo": null,
+      "contract_version": 1,
+      "declared_targets": [
+        "darwin-aarch64"
+      ],
+      "development": "use_only",
+      "distribution_repo": "owner/ledger",
+      "source_repo": null,
+      "targets": [
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "ubuntu-24.04",
+          "runtime": "not_uploaded",
+          "target": "any"
+        },
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "macos-15",
+          "runtime": "not_uploaded",
+          "target": "darwin-aarch64"
+        },
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "macos-15-intel",
+          "runtime": "not_uploaded",
+          "target": "darwin-x86_64"
+        },
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "windows-11-arm",
+          "runtime": "not_uploaded",
+          "target": "windows-aarch64"
+        },
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "windows-latest",
+          "runtime": "not_uploaded",
+          "target": "windows-x86_64"
+        },
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "ubuntu-24.04-arm",
+          "runtime": "not_uploaded",
+          "target": "linux-aarch64"
+        },
+        {
+          "build": "not_uploaded",
+          "reason": "local_only_source_not_uploaded",
+          "runner": "ubuntu-24.04",
+          "runtime": "not_uploaded",
+          "target": "linux-x86_64"
+        }
+      ],
+      "variant": "local_only",
+      "windows_tests": {
+        "default": false,
+        "input": ""
+      },
+      "workflows": [],
+      "digest": "1851bc81178981e6811f382c42b2331b172ebee2cbf2a787dcf0218d09193aac"
+    }
+  }
+}

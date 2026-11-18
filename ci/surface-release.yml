@@ -1,0 +1,176 @@
+name: surface release draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version of surface.json to build as a draft (not published)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: surface-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: plan release targets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      portable: ${{ steps.scan.outputs.portable }}
+      include: ${{ steps.scan.outputs.include }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+
+      - name: plan release targets
+        id: scan
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          REQUESTED_REF: ${{ github.ref_name }}
+        run: |
+          cat > plan-targets.mjs <<'SCRIPT'
+          import { readFileSync, appendFileSync } from "node:fs";
+          const manifest = JSON.parse(readFileSync("surface.json", "utf8"));
+          const requested = process.env.REQUESTED_VERSION.trim();
+          if (requested !== manifest.version) {
+            throw new Error(`requested ${requested} does not match surface.json ${manifest.version}`);
+          }
+          if (process.env.REQUESTED_REF.trim() !== manifest.version) {
+            console.warn(`ref ${process.env.REQUESTED_REF} differs from the requested version; the draft is named by the input`);
+          }
+          const native = Boolean(manifest.backend || manifest.cli);
+          const targets = [
+            ["any", "ubuntu-24.04"],
+            ["darwin-aarch64", "macos-15"],
+            ["darwin-x86_64", "macos-15-intel"],
+            ["windows-aarch64", "windows-11-arm"],
+            ["windows-x86_64", "windows-latest"],
+            ["linux-aarch64", "ubuntu-24.04-arm"],
+            ["linux-x86_64", "ubuntu-24.04"],
+          ];
+          const include = targets
+            .filter(([target]) => !(native && target === "any"))
+            .map(([target, runner]) => ({ target, runner }));
+          appendFileSync(process.env.GITHUB_OUTPUT, `portable=${native ? "false" : "true"}\n`);
+          appendFileSync(process.env.GITHUB_OUTPUT, `include=${JSON.stringify({ include })}\n`);
+          SCRIPT
+          node plan-targets.mjs
+
+  build:
+    needs: preflight
+    if: github.event_name == 'workflow_dispatch'
+    name: draft ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.preflight.outputs.include) }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: build bundle
+        run: bun run build
+
+      - name: bundle contract
+        shell: bash
+        run: test -f dist/surface.json
+
+      - name: draft bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-draft-${{ matrix.target }}
+          path: dist
+          retention-days: 14
+          if-no-files-found: error
+
+  draft-review:
+    needs: [preflight, build]
+    name: draft artifacts for review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: download drafts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-draft-*
+          path: drafts
+
+      - name: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+
+      - name: digest drafts
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          cat > digest-drafts.mjs <<'SCRIPT'
+          import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+          import { createHash } from "node:crypto";
+          import { join, relative, sep } from "node:path";
+          const files = [];
+          const walk = directory => {
+            const entries = readdirSync(directory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
+            for (const entry of entries) {
+              const path = join(directory, entry.name);
+              if (entry.isDirectory()) walk(path);
+              else if (entry.isFile()) {
+                files.push({
+                  path: relative("drafts", path).split(sep).join("/"),
+                  sha256: createHash("sha256").update(readFileSync(path)).digest("hex"),
+                  bytes: statSync(path).size,
+                });
+              }
+            }
+          };
+          for (const entry of readdirSync("drafts", { withFileTypes: true })) {
+            if (entry.isDirectory()) walk(join("drafts", entry.name));
+          }
+          writeFileSync("drafts/digests.json", `${JSON.stringify({ version: process.env.REQUESTED_VERSION, files }, null, 2)}\n`);
+          SCRIPT
+          node digest-drafts.mjs
+
+      - name: upload digests
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-draft-digests
+          path: drafts/digests.json
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: what this draft is not
+        shell: bash
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          Release draft
+          =============
+
+          These are run artifacts built from the dispatched revision. They are not a GitHub
+          release, not a protected or packaged `.surface` archive and not registered with
+          Cloud. Nothing was published by this workflow.
+
+          Review the exact draft bytes, then protect and package them in Ponpoko, review the
+          final artifact and complete the publication confirmation. Preparing or running this
+          workflow never approves publication and never claims a target passed.
+          SUMMARY

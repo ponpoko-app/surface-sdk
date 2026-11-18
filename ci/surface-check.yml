@@ -1,0 +1,73 @@
+name: surface checks
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_checks:
+        description: Run build, test and bundle checks
+        type: boolean
+        default: true
+      run_windows:
+        description: Run Windows tests (unchecked opt-in, uses Windows minutes)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: surface-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_checks
+    name: build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: build
+        run: bun run build
+
+      - name: test
+        run: bun test
+
+      - name: bundle contract
+        shell: bash
+        run: test -f dist/surface.json
+
+  windows-tests:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_windows
+    name: windows tests (opt-in)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: test
+        run: bun test

@@ -42,6 +42,7 @@
     "invalid_input",
     "cursor_expired",
     "budget_exhausted",
+    "budget_out_of_bounds",
     "host_unavailable",
     "search_unavailable",
     "search_outcome_unknown",

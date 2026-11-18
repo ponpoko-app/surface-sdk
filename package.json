@@ -6,6 +6,7 @@
   "description": "Public Ponpoko surface contracts, frame client, Host AI adapters and compatibility checks",
   "engines": { "node": ">=24" },
   "exports": {
+    "./ci-contract": { "types": "./ci-contract.d.mts", "default": "./ci-contract.mjs" },
     "./package-contract": { "types": "./package-contract.d.mts", "default": "./package-contract.mjs" },
     "./release-contract": { "types": "./release-contract.d.mts", "default": "./release-contract.mjs" },
     ".": { "types": "./surface.d.mts", "default": "./surface.mjs" },
@@ -16,6 +17,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
+    "check:ci": "node scripts/build-ci-fixtures.mjs --check",
     "check:surface": "node scripts/check-surface.mjs",
     "copy:ai": "node scripts/copy-ai-assets.mjs"
   }

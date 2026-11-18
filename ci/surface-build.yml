@@ -1,0 +1,89 @@
+name: surface build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: surface-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: plan targets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      portable: ${{ steps.scan.outputs.portable }}
+      include: ${{ steps.scan.outputs.include }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.1
+
+      - name: plan targets
+        id: scan
+        shell: bash
+        run: |
+          cat > plan-targets.mjs <<'SCRIPT'
+          import { readFileSync, appendFileSync } from "node:fs";
+          const manifest = JSON.parse(readFileSync("surface.json", "utf8"));
+          const native = Boolean(manifest.backend || manifest.cli);
+          const targets = [
+            ["any", "ubuntu-24.04"],
+            ["darwin-aarch64", "macos-15"],
+            ["darwin-x86_64", "macos-15-intel"],
+            ["windows-aarch64", "windows-11-arm"],
+            ["windows-x86_64", "windows-latest"],
+            ["linux-aarch64", "ubuntu-24.04-arm"],
+            ["linux-x86_64", "ubuntu-24.04"],
+          ];
+          const include = targets
+            .filter(([target]) => !(native && target === "any"))
+            .map(([target, runner]) => ({ target, runner }));
+          appendFileSync(process.env.GITHUB_OUTPUT, `portable=${native ? "false" : "true"}\n`);
+          appendFileSync(process.env.GITHUB_OUTPUT, `include=${JSON.stringify({ include })}\n`);
+          SCRIPT
+          node plan-targets.mjs
+
+  build:
+    needs: preflight
+    if: github.event_name == 'workflow_dispatch'
+    name: build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.preflight.outputs.include) }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: install
+        run: bun install --frozen-lockfile
+
+      - name: build bundle
+        run: bun run build
+
+      - name: bundle contract
+        shell: bash
+        run: test -f dist/surface.json
+
+      - name: draft bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: surface-draft-${{ matrix.target }}
+          path: dist
+          retention-days: 14
+          if-no-files-found: error

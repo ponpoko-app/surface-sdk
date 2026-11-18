@@ -59,6 +59,7 @@ export const ERROR_CODES = [
   "invalid_input",
   "cursor_expired",
   "budget_exhausted",
+  "budget_out_of_bounds",
   "host_unavailable",
   "search_unavailable", "search_outcome_unknown", "search_invalid_response", "search_upstream_error",
   "sign_in_required", "quota_exhausted", "rate_limited", "outcome_unknown",
@@ -93,6 +94,7 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   invalid_input: "the request carried an argument the host refuses",
   cursor_expired: "the host no longer holds the events from that cursor",
   budget_exhausted: "the work has no allowance left",
+  budget_out_of_bounds: "the budget asked for is larger than the host allows",
   host_unavailable: "the host cannot answer right now",
 };
 

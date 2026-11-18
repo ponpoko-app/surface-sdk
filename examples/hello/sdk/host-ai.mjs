@@ -38,29 +38,43 @@ export function validateSchema(root, schema, value, path = "$") {
   }
   return value;
 }
+export function uncertainAiOperation(operation) {
+  return ["invoke", "invoke_stop", "invoke_job_cancel"].includes(operation);
+}
+
+export class AiRequestError extends Error {
+  constructor({ code, message, io }, request_id) {
+    super(message);
+    this.name = "AiRequestError";
+    Object.assign(this, { code, io, request_id });
+  }
+}
+
 export function createHostAi(transport) {
-  async function request(operation, payload = {}) {
+  async function request(operation, payload = {}, options) {
     const envelope = { ...payload, operation, contract_version: CONTRACT.version };
-    validateSchema(SCHEMA, SCHEMA, envelope);
-    if (envelope.input?.input.some(part => part.type === "text" && typeof part.text !== "string")) throw Object.assign(new Error("Text input requires text."), { code: "invalid_input" });
+    const requestId = envelope.input?.request_id ?? envelope.request_id;
+    try { validateSchema(SCHEMA, SCHEMA, envelope); }
+    catch (error) { throw new AiRequestError(error, requestId); }
+    if (envelope.input?.input.some(part => part.type === "text" && typeof part.text !== "string")) throw new AiRequestError({ message: "Text input requires text.", code: "invalid_input" }, requestId);
     let answer;
-    try { answer = await transport(envelope); }
+    try { answer = await transport(envelope, options); }
     catch (error) { if (error && typeof error === "object") { error.request_id ??= envelope.input?.request_id ?? envelope.request_id; } throw error; }
-    if (answer?.ok === false) throw Object.assign(new Error(answer.error?.message || "Host AI request failed."), answer.error, { request_id: envelope.input?.request_id ?? envelope.request_id });
+    if (answer?.ok === false) throw new AiRequestError({ code: "ai_unavailable", ...answer.error, message: answer.error?.message || "Host AI request failed." }, requestId);
     return answer?.ok === true ? answer.result : answer;
   }
   return Object.freeze({
     contractVersion: CONTRACT.version,
-    contract: () => request("contract"),
-    invoke: input => request("invoke", { input }),
-    validate: (input, checkSetup = false) => request("validate", { input, check_setup: checkSetup }),
-    lookup: request_id => request("invoke_lookup", { request_id }),
-    status: request_id => request("invoke_status", { request_id }),
-    events: (request_id, after = 0) => request("invoke_events", { request_id, after }),
-    stop: request_id => request("invoke_stop", { request_id }),
-    jobStatus: request_id => request("invoke_job_status", { request_id }),
-    jobCancel: request_id => request("invoke_job_cancel", { request_id }),
-    slots: () => request("slots"),
-    usage: () => request("usage"),
+    contract: options => request("contract", {}, options),
+    invoke: (input, options) => request("invoke", { input }, options),
+    validate: (input, checkSetup = false, options) => request("validate", { input, check_setup: checkSetup }, options),
+    lookup: (request_id, options) => request("invoke_lookup", { request_id }, options),
+    status: (request_id, options) => request("invoke_status", { request_id }, options),
+    events: (request_id, after = 0, options) => request("invoke_events", { request_id, after }, options),
+    stop: (request_id, options) => request("invoke_stop", { request_id }, options),
+    jobStatus: (request_id, options) => request("invoke_job_status", { request_id }, options),
+    jobCancel: (request_id, options) => request("invoke_job_cancel", { request_id }, options),
+    slots: options => request("slots", {}, options),
+    usage: options => request("usage", {}, options),
   });
 }

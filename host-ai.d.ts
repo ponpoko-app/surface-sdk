@@ -5,20 +5,73 @@ export type InferenceRequest = { "request_id": string; "io": ModelIo; "input": A
 export type AiEnvelope = { "operation": "contract" | "validate" | "invoke" | "invoke_lookup" | "invoke_status" | "invoke_events" | "invoke_stop" | "invoke_job_status" | "invoke_job_cancel" | "slots" | "usage"; "contract_version": 1; "input"?: InferenceRequest; "request_id"?: string; "after"?: number; "check_setup"?: boolean;  };
 export type OutputPart = { "type": string; "text"?: string | null; "url"?: string | null; "data_base64"?: string | null; "mime_type"?: string | null; "value"?: unknown; "index"?: number | null; [key: string]: unknown; };
 export type InferenceResult = { "output": Array<OutputPart>; "usage"?: unknown; "job"?: { "id": string; "status": string; "progress"?: unknown; "error"?: unknown;  };  };
-export interface HostAi {
-  readonly contractVersion: 1;
-  contract(): Promise<{ version: number; schema_sha256: string; schema: unknown }>;
-  invoke(input: InferenceRequest): Promise<Record<string, unknown> & { request_id: string; status: string }>;
-  validate(input: InferenceRequest, checkSetup?: boolean): Promise<{ valid: true; setup?: { status: string; error?: unknown } }>;
-  lookup(requestId: string): Promise<Record<string, unknown>>;
-  status(requestId: string): Promise<Record<string, unknown> & { status?: string; result?: InferenceResult | { error: { code: string; message: string } } | null }>;
-  events(requestId: string, after?: number): Promise<{ cursor: number; events: Array<{ seq: number; event: unknown }> }>;
-  stop(requestId: string): Promise<{ stopping: boolean }>;
-  jobStatus(requestId: string): Promise<InferenceResult>;
-  jobCancel(requestId: string): Promise<InferenceResult>;
-  slots(): Promise<unknown>;
-  usage(): Promise<unknown>;
+export interface AiRequestOptions { signal?: AbortSignal }
+export type InferenceBudget = InferenceRequest["budget"];
+export type AiErrorBody = { code: string; message: string; io?: ModelIo | null };
+export type AiReceiptStatus = "running" | "completed" | "failed" | "stopped" | "unknown_outcome";
+export type AiReceipt = { found: false } | {
+  found: true;
+  request_id: string;
+  grant_id: string;
+  budget: InferenceBudget;
+  status: AiReceiptStatus;
+  result: InferenceResult | { error: AiErrorBody } | null;
+  inspection_required: boolean;
+  started?: boolean;
+};
+export type AiEvent =
+  | { type: "started"; grant_id: string }
+  | { type: "delta"; output: OutputPart }
+  | { type: "job"; result: InferenceResult }
+  | { type: Exclude<AiReceiptStatus, "running">; result: InferenceResult | { error: AiErrorBody } }
+  | { type: "result"; result: InferenceResult }
+  | { type: "error"; error?: unknown };
+export type AiEventRow = { seq: number; event: AiEvent };
+export type AiEventPage = { cursor: number; events: AiEventRow[] };
+export type AiContract = {
+  version: number; schema_sha256: string; schema: unknown; sdk: string;
+  types: string; backend_sdk: string; validation: string;
+};
+export type AiValidation = {
+  valid: true; contract_version: number; paid_requests: 0;
+  setup?: { status: "ready"; inference: "unmeasured" } | { status: "setup_required"; error: AiErrorBody; inference: "unmeasured" };
+};
+export type AiSlots = {
+  local: Array<{ io: ModelIo; provider_id: string; model: string; updated_at: number }>;
+  cloud: Array<{ slot_id: string; io: ModelIo | null; alias_id: string; pinned_alias_revision: number | null;
+    enabled: boolean; position: number; status: string; reason: string | null; action: string | null }>;
+  managed_by: "administrator" | null;
+};
+export type AiUsage = { object: "ai.usage"; rows: Array<{
+  surface_id: string; surface_name: string; io: ModelIo | null; source: "cloud" | "local"; model: string;
+  requests: number; input_tokens: number | null; output_tokens: number | null; unknown_usage: number;
+  failed: number; unsettled: number; last_used_at: number;
+}> };
+export type AiWireResult = AiContract | AiReceipt | AiEventPage | AiSlots | AiUsage | AiValidation | InferenceResult | { stopping: boolean };
+export type AiWireReply = { ok: true; result: AiWireResult } | { ok: false; error: AiErrorBody };
+export declare class AiRequestError extends Error {
+  constructor(body: AiErrorBody, requestId?: string);
+  readonly code: string;
+  readonly io?: ModelIo | null;
+  readonly request_id?: string;
 }
-export declare function createHostAi(transport: (payload: AiEnvelope) => Promise<unknown>): HostAi;
-export declare const CONTRACT: { version: 1; schema_sha256: string };
+export interface HostAi {
+  readonly contractVersion: AiEnvelope["contract_version"];
+  contract(options?: AiRequestOptions): Promise<AiContract>;
+  invoke(input: InferenceRequest, options?: AiRequestOptions): Promise<Extract<AiReceipt, { found: true }>>;
+  validate(input: InferenceRequest, checkSetup?: boolean, options?: AiRequestOptions): Promise<AiValidation>;
+  lookup(requestId: string, options?: AiRequestOptions): Promise<AiReceipt>;
+  status(requestId: string, options?: AiRequestOptions): Promise<AiReceipt>;
+  events(requestId: string, after?: number, options?: AiRequestOptions): Promise<AiEventPage>;
+  stop(requestId: string, options?: AiRequestOptions): Promise<{ stopping: boolean }>;
+  jobStatus(requestId: string, options?: AiRequestOptions): Promise<InferenceResult>;
+  jobCancel(requestId: string, options?: AiRequestOptions): Promise<InferenceResult>;
+  slots(options?: AiRequestOptions): Promise<AiSlots>;
+  usage(options?: AiRequestOptions): Promise<AiUsage>;
+}
+export declare function uncertainAiOperation(operation: AiEnvelope["operation"]): boolean;
+export declare function createHostAi(transport: (payload: AiEnvelope, options?: AiRequestOptions) => Promise<unknown>): HostAi;
+export declare function validateSchema(schema: unknown, rule: unknown, value: unknown, path?: string): void;
+export declare const SCHEMA: Record<string, unknown> & { $defs: { InferenceRequest: unknown }; examples: AiEnvelope[] };
+export declare const CONTRACT: { version: AiEnvelope["contract_version"]; schema_sha256: string };
 declare global { interface Window { ponpoko: { ai: HostAi; [key: string]: unknown }; } }

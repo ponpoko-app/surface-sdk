@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>__NAME__</title>
+  <link rel="stylesheet" href="sdk-tokens.css">
+  <link rel="stylesheet" href="sdk-components.css">
+  <link rel="stylesheet" href="surface.css">
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <main>
+    <h1>__NAME__</h1>
+    <form class="pp-panel" id="capture" novalidate>
+      <div class="pp-field">
+        <label for="note">Note</label>
+        <textarea class="pp-input" id="note" rows="5" required></textarea>
+        <p class="pp-field-error" id="note-error" hidden></p>
+      </div>
+      <div class="pp-toolbar">
+        <button class="pp-button" data-variant="primary" type="submit">Save note</button>
+        <p class="pp-status" id="save-status" role="status"></p>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

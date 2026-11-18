@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="A compact queue for print jobs from intake to delivery.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dispatch queue</title>
+  <link rel="stylesheet" href="sdk-tokens.css">
+  <link rel="stylesheet" href="sdk-components.css">
+  <link rel="stylesheet" href="surface.css">
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <main>
+    <header class="page-heading">
+      <div>
+        <h1>Dispatch queue</h1>
+        <p id="summary">Track jobs from intake to handoff.</p>
+      </div>
+      <button type="button" class="pp-button" id="check-host" hidden>Check connection</button>
+    </header>
+    <div class="pp-panel intake">
+      <form id="job-form" novalidate>
+        <div class="pp-field">
+          <label for="job">Job</label>
+          <input class="pp-input" id="job" placeholder="e.g. Deliver proofs to the studio" maxlength="120" required>
+          <p class="pp-field-error" id="job-error" hidden></p>
+        </div>
+        <div class="pp-field">
+          <label for="lane">Lane</label>
+          <select class="pp-input" id="lane">
+            <option>Intake</option><option>Studio</option><option>Delivery</option>
+          </select>
+        </div>
+        <button class="pp-button" data-variant="primary">Add job</button>
+      </form>
+    </div>
+    <p class="pp-status" id="status" role="status"></p>
+    <section aria-labelledby="queue-heading">
+      <div class="section-heading">
+        <h2 id="queue-heading" tabindex="-1">Jobs</h2>
+        <div class="pp-toolbar" aria-label="Filter jobs" role="group">
+          <button class="pp-button" id="open" aria-pressed="true" disabled>Open</button>
+          <button class="pp-button" id="all" aria-pressed="false">All jobs</button>
+        </div>
+      </div>
+      <div class="pp-table-scroll">
+        <table class="pp-table">
+          <thead><tr><th scope="col">Job</th><th scope="col">Lane</th><th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="pp-status empty" id="empty" hidden>No open jobs. Add a job or view completed work under All jobs.</p>
+    </section>
+  </main>
+</body>
+</html>

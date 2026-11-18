@@ -18,6 +18,8 @@ export const HOST_SURFACE = "host.surface";
 
 export const SURFACE_OPERATIONS = ["tool.file", "tool.paste", "backend.call"]         ;
 
+
+
 export const NAMESPACES = [HOST_PLATFORM, HOST_WORK, HOST_SURFACE]         ;
 
 
@@ -58,6 +60,7 @@ export const ERROR_CODES = [
   "not_found",
   "invalid_input",
   "cursor_expired",
+  "revision_conflict", "work_owned", "work_completed", "budget_required", "precondition_failed",
   "budget_exhausted",
   "budget_out_of_bounds",
   "host_unavailable",
@@ -93,6 +96,11 @@ const ERROR_MESSAGES                            = {
   not_found: "the thing the request names is not here",
   invalid_input: "the request carried an argument the host refuses",
   cursor_expired: "the host no longer holds the events from that cursor",
+  revision_conflict: "the work changed before this operation ran",
+  work_owned: "another invocation owns this work",
+  work_completed: "this work is already complete",
+  budget_required: "the work needs a new budget grant",
+  precondition_failed: "a work precondition failed",
   budget_exhausted: "the work has no allowance left",
   budget_out_of_bounds: "the budget asked for is larger than the host allows",
   host_unavailable: "the host cannot answer right now",
@@ -129,6 +137,14 @@ export function operationName(namespace           , operation        )         {
 export function isBrokerChannel(value         )          {
   return value === BROKER_CHANNEL;
 }
+
+
+
+
+
+
+
+
 
 
 

@@ -1,24 +1,83 @@
 {
-  "name": "@ponpoko/surface-sdk",
-  "version": "1.0.2",
-  "private": true,
+  "name": "@zurge-co/ponpoko-surface-sdk",
+  "version": "1.1.0",
   "type": "module",
-  "description": "Public Ponpoko surface contracts, frame client, Host AI adapters and compatibility checks",
-  "engines": { "node": ">=24" },
+  "description": "Build Ponpoko surfaces with a pinned starter, native controls and the typed Host broker.",
+  "engines": {
+    "node": ">=22"
+  },
   "exports": {
-    "./ci-contract": { "types": "./ci-contract.d.mts", "default": "./ci-contract.mjs" },
-    "./package-contract": { "types": "./package-contract.d.mts", "default": "./package-contract.mjs" },
-    "./release-contract": { "types": "./release-contract.d.mts", "default": "./release-contract.mjs" },
-    ".": { "types": "./surface.d.mts", "default": "./surface.mjs" },
-    "./ai": { "types": "./host-ai.d.mts", "default": "./host-ai.mjs" },
-    "./research/backend": { "types": "./research.backend.d.mts", "default": "./research.backend.mjs" },
-    "./backend": { "types": "./host-ai.backend.d.mts", "default": "./host-ai.backend.mjs" },
-    "./protocol": { "types": "./protocol.ts", "default": "./protocol.mjs" }
+    ".": {
+      "types": "./surface.d.mts",
+      "default": "./surface.mjs"
+    },
+    "./ai": {
+      "types": "./host-ai.d.mts",
+      "default": "./host-ai.mjs"
+    },
+    "./research/backend": {
+      "types": "./research.backend.d.mts",
+      "default": "./research.backend.mjs"
+    },
+    "./backend": {
+      "types": "./host-ai.backend.d.mts",
+      "default": "./host-ai.backend.mjs"
+    },
+    "./protocol": {
+      "types": "./protocol.ts",
+      "default": "./protocol.mjs"
+    },
+    "./theme": {
+      "types": "./theme.d.mts",
+      "default": "./theme.mjs"
+    },
+    "./ui": {
+      "types": "./ui/index.d.mts",
+      "default": "./ui/index.mjs"
+    },
+    "./build": {
+      "types": "./build.d.mts",
+      "default": "./build.mjs"
+    },
+    "./tokens.css": "./ui/tokens.css",
+    "./components.css": "./ui/components.css",
+    "./ai-contract.json": "./ai-contract.json",
+    "./broker-contract.json": "./broker-contract.json"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "check:ci": "node scripts/build-ci-fixtures.mjs --check",
     "check:surface": "node scripts/check-surface.mjs",
     "copy:ai": "node scripts/copy-ai-assets.mjs"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zurge-co/ponpoko-surface-sdk.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "SKILL.md",
+    "starter",
+    "ui",
+    "build.*",
+    "surface.*",
+    "wait.mjs",
+    "theme.*",
+    "host-operations.d.mts",
+    "host-ai*.mjs",
+    "host-ai.d.mts",
+    "host-ai.backend.d.mts",
+    "protocol.*",
+    "platform-types.d.ts",
+    "work-*.d.ts",
+    "research.*",
+    "ai-contract.json",
+    "broker-contract.json"
+  ]
 }

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="An editorial notebook for observations and field drafts.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Field notebook</title>
+  <link rel="stylesheet" href="sdk-tokens.css">
+  <link rel="stylesheet" href="sdk-components.css">
+  <link rel="stylesheet" href="surface.css">
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <h1>Field notebook</h1>
+      <button class="pp-button" data-variant="primary" id="new-entry">New entry</button>
+    </header>
+    <div class="notebook">
+      <nav aria-label="Entries">
+        <h2>Entries</h2>
+        <ul id="entries"></ul>
+        <p class="pp-status" id="empty" hidden>Your first entry will appear here.</p>
+      </nav>
+      <article id="reading">
+        <time id="date"></time>
+        <h2 id="entry-title">The north bank</h2>
+        <div id="body"><p>The water had pulled back from the reeds overnight.</p></div>
+        <button class="pp-button" id="edit-entry">Edit entry</button>
+      </article>
+      <form id="writing" novalidate hidden>
+        <h2 id="editor-title">New entry</h2>
+        <div class="pp-field">
+          <label for="title">Title</label>
+          <input class="pp-input" id="title" maxlength="80" required>
+          <p class="pp-field-error" id="title-error" hidden></p>
+        </div>
+        <div class="pp-field">
+          <label for="entry">Observation</label>
+          <textarea class="pp-input" id="entry" rows="7" maxlength="5000" required></textarea>
+          <p class="pp-field-error" id="entry-error" hidden></p>
+        </div>
+        <div class="pp-toolbar">
+          <button class="pp-button" data-variant="primary">Save entry</button>
+          <button class="pp-button" id="cancel" type="button">Close editor</button>
+        </div>
+      </form>
+    </div>
+    <p class="pp-status" id="status" role="status"></p>
+  </main>
+</body>
+</html>

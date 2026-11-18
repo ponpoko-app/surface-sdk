@@ -1,0 +1,14 @@
+:root {
+  --note-measure: 38rem;
+}
+
+main {
+  max-width: var(--note-measure);
+  margin-inline: auto;
+  padding: var(--pp-space-6) var(--pp-space-5);
+}
+
+#capture {
+  display: grid;
+  gap: var(--pp-space-4);
+}

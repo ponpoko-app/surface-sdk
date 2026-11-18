@@ -1,0 +1,82 @@
+:root {
+  --pp-canvas: #eee9f7;
+  --pp-panel: #f7f2fb;
+  --pp-surface: #fbf7ff;
+  --pp-text: #282139;
+  --pp-muted: #5d5069;
+  --pp-accent: #6f2448;
+  --pp-on-accent: #fff6ff;
+  --pp-border: #c8b9d4;
+  --pp-border-strong: #9b839f;
+  --pp-focus: #6f2448;
+  --pp-danger: #8c2240;
+  --pp-hover: #e6daed;
+  --pp-selection: #e9d3e4;
+  --pp-font-heading: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --pp-size-title: 3.2rem;
+  --pp-heading-weight: 500;
+  --pp-radius: .15rem;
+  --pp-scheme: light;
+  --notebook-width: 66rem;
+  --article-title: 2.65rem;
+  --article-body: 1.3rem;
+}
+
+main {
+  max-width: var(--notebook-width);
+  margin-inline: auto;
+  padding: var(--pp-space-6);
+}
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--pp-space-3);
+  padding-block: var(--pp-space-4) var(--pp-space-5);
+  border-bottom: 2px solid var(--pp-text);
+}
+h1, h2 { margin: 0; }
+
+.notebook {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(0, 2.6fr);
+}
+
+nav { padding: var(--pp-space-5) var(--pp-space-5) 0 0; }
+nav h2 { font: var(--pp-size-ui)/1.4 var(--pp-font); color: var(--pp-muted); }
+nav ul { list-style: none; margin: var(--pp-space-3) 0; padding: 0; }
+nav li { border-bottom: var(--pp-border-width) solid var(--pp-border); }
+
+nav .pp-button {
+  justify-content: start;
+  width: 100%;
+  text-align: start;
+  border-color: transparent;
+  background: transparent;
+  min-height: 2.75rem;
+}
+
+nav .pp-button[aria-current="true"] { background: var(--pp-selection); color: var(--pp-accent); cursor: default; }
+
+article, form {
+  padding: var(--pp-space-6) 0 var(--pp-space-5) var(--pp-space-6);
+  border-inline-start: var(--pp-border-width) solid var(--pp-border);
+}
+
+article time { font-size: var(--pp-size-ui); color: var(--pp-muted); }
+article h2 { font-size: var(--article-title); margin-top: var(--pp-space-2); line-height: 1.16; }
+article p { font: var(--article-body)/1.55 var(--pp-font-heading); max-width: 46ch; }
+article .pp-button { margin-top: var(--pp-space-3); }
+form:not([hidden]) { display: grid; gap: var(--pp-space-4); }
+form h2 { font-size: var(--article-title); }
+#status { min-height: 1.5em; }
+
+@media (max-width: 43rem) {
+  :root { --pp-size-title: 2.5rem; --article-title: 2rem; }
+  main { padding: var(--pp-space-4); }
+  .notebook { grid-template-columns: minmax(0, 1fr); }
+  nav { padding-inline: 0; }
+  article, form { border-inline: 0; padding-inline: 0; }
+}

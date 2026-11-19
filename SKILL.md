@@ -27,13 +27,18 @@ play/replay its essential workflow. Record which checks actually ran. Static
 contract checks and setup checks do not establish provider inference or
 behavioral acceptance.
 
-Before sharing or updating public source, hand publication to Poko in Ponpoko.
-Poko inspects the exact source, updates `.gitignore`, prepares root `PONPOKO.md`,
-commits and pushes the reviewed revision, then registers it through the signed-in
-Cloud account. Share appearance and functionality only: no real user records,
-sample datasets, usage history, credentials or account connections. Recipients
-start empty and connect their own accounts. Keep local files and history intact;
-an ignore rule cannot remove staged files or previously committed data.
+Before sharing a `.surface` release package or publishing source code to GitHub,
+hand publication to the standalone `surface-publisher` surface (`surfaces/publisher`)
+in Ponpoko. Poko creates, edits, builds, installs and tests local surfaces and
+directs sharing/publishing requests to `surface-publisher`. `surface-publisher`
+runs the security scan (`security.scan`), verifies `.gitignore` and root
+`PONPOKO.md`, packages `.surface` GitHub Releases (`publish.package`) or publishes
+reviewed source to GitHub (`publish.source`), and registers public surfaces
+through the signed-in Cloud account. Share appearance and functionality only: no
+real user records, sample datasets, usage history, credentials or account
+connections. Recipients start empty and connect their own accounts. Keep local
+files and history intact; an ignore rule cannot remove staged files or previously
+committed data.
 
 `PONPOKO.md` declares the owner's exact Ponpoko Cloud account id, not a GitHub
 username, email, token or guessed placeholder. Its frontmatter has one field:
@@ -49,13 +54,14 @@ id from the authenticated Ponpoko account when preparing publication. Preserve a
 existing declaration's owner; do not silently transfer someone else's surface.
 The file must be committed at the repository root on its public default branch.
 Ponpoko's authenticated `POST /v1/me/surfaces` registers `{ "repo": "owner/repository" }`
-and checks this declaration. Poko performs registration after a successful push;
-the person does not need to claim manually. Open `https://ponpoko.app/surfaces`
-after registration succeeds. Report push and registration as separate outcomes.
-Registration proves a repository link, not code safety or working functionality.
-Every changed revision needs a fresh Poko review and publication confirmation.
-If inspection is incomplete, report it as unverified and do not publish. An SDK
-compatibility pass does not replace the Host publication guard or owner consent.
+and checks this declaration. `surface-publisher` handles registration after a
+successful push; the person does not need to claim manually. Open
+`https://ponpoko.app/surfaces` after registration succeeds. Report push and
+registration as separate outcomes. Registration proves a repository link, not code
+safety or working functionality. Every changed revision needs a fresh
+`surface-publisher` security scan and explicit publication confirmation. If
+inspection is incomplete, report it as unverified and do not publish. An SDK
+compatibility pass does not replace the `surface-publisher` guard or owner consent.
 
 Protect credentials before the first write, even without Git or `.gitignore`.
 Never request secrets in chat or read credential files to obtain them. Never put

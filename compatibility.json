@@ -9,7 +9,7 @@
   "assets": {
     "LICENSE": "590d57f1f6b940e6fc9a887e3bd6469196d843f92b78b141fe7784316695632d",
     "README.md": "9f84977502be2445d246760cef77673fcde06fd35529270267a83ad98542dbe5",
-    "SKILL.md": "3c8523959dec7da30b137e3ee3a33418317485a8d0322294c392afe4a1d651bd",
+    "SKILL.md": "5e5f5bcd9e651c4c3c708f0cdd47254fc394f3d767ad6596c903f308c6aacc80",
     "build.d.mts": "7d1c12bfe62e5258e6db7ee99ae874bdc9589455070909aa56be99e0ea5cb70c",
     "build.mjs": "73f1af95a425eabcda476208e89ba147dd7fca8ebf9b5edd628798486d86179e",
     "ci/surface-build.yml": "a597643ff021891385924fd7fafe4afaa4e82c301ddc59ec41862ede1cf12b86",
@@ -65,7 +65,7 @@
     "ui/index.mjs": "58eee16722f3158a69d1b907fe576c2d50692257241e2af75f13951d7c6db6be",
     "ui/tokens.css": "3021a62e8aed7bf06459dc654d315995697c2b648bd59a9c28c95ccb6d8e26bc",
     "wait.mjs": "4675620faafa78e6b38b5e1542d2ab1a78cbf9148aeb351e97b608a395ce0228",
-    "release/protection.cjs": "29313a0992e032000663ad91322a611c3ed4ace10fb48ad7eda4ced45157f44c",
+    "release/protection.cjs": "b040552903cca5b865fdb2086b3b3810f0abf0d16c9fe8c4e00d27c9c3bf984e",
     ".gitattributes": "d71f50c4bfa0e45b0f7cf73078a0f49ac877ddb5a8c15f15c1f5d479dfff7993",
     "secret-policy.json": "05bc35a9c2355e76f29e75b8b21cd93dae6b45e41009c690c3892e7246d31ef7",
     ".gitignore": "df693603dd3617dd2c71a72279dec50a5a63d2eecd30e76d68bc866aad8a4f49",
@@ -84,7 +84,7 @@
     "examples/hello/sdk/protocol.mjs": "70f2385fdae8ca2510f52cf0d27cfce3b77dfb3ec7e7b9e953e9a9e318111ea4",
     "examples/hello/sdk/host-ai.mjs": "c195e5b894550781a112e29b397c0c38f410ad03cd6df1591e8c9e088906711d",
     "examples/hello/sdk/wait.mjs": "4675620faafa78e6b38b5e1542d2ab1a78cbf9148aeb351e97b608a395ce0228",
-    "work-types.d.ts": "bc4c21f339304fc4f4bd9fc543a7311b5bc2ffcfa7753d704563db8be37c35e8",
+    "work-types.d.ts": "5536cd6dcaeb4d2d10ee1e7aa050ef76c68ad32b83eff8a1bdab57d6c0e99e4e",
     "work-git.d.ts": "0b9315df869426fc7e51ffc4202434eec2863d59673deb145daf2a5f62c6adf4",
     "work-layout.d.ts": "e2cc6cec7b675f37304417d8d9b32ffa4e47e570d724f4557ec7469563ebf2ad",
     "platform-types.d.ts": "09827555bdf489d4a49615f897da796b466bad6cb6d65987eb09432016a83a95"

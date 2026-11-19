@@ -1,9 +1,5 @@
 import type { GitRepoView } from "./work-git.d.ts";
 
-export type CanonicalLifecycle = "running" | "waiting" | "done" | "failed";
-
-export type CanonicalPhase = "plan" | "build" | "verify";
-
 export type WorkStatus =
   | "queued"
   | "running"
@@ -12,8 +8,7 @@ export type WorkStatus =
   | "stopped"
   | "interrupted"
   | "failed"
-  | "completed"
-  | CanonicalLifecycle;
+  | "completed";
 
 export type WorkPhase =
   | "understand"
@@ -22,8 +17,7 @@ export type WorkPhase =
   | "install"
   | "try"
   | "repair"
-  | "deliver"
-  | CanonicalPhase;
+  | "deliver";
 
 export type EvidenceKind = "suite" | "play" | "replay" | "inspect" | "fault" | "acceptance";
 

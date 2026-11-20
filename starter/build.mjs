@@ -1,3 +1,3 @@
-import { buildSurface } from "@zurge-co/ponpoko-surface-sdk/build";
+import { buildSurface } from "@ponpoko-app/surface-sdk/build";
 
-await buildSurface();
+await buildSurface({ styles: [] });

@@ -5,18 +5,19 @@ description: Build or update a standalone Ponpoko surface using its public manif
 
 Start with [README.md](README.md). In Ponpoko, use `surface_create` for new
 source and keep its exact SDK tarball and lockfile. Read `index.html`, `main.ts`,
-`surface.css` and `surface.json` from that source. Build with the declared Bun
+`surface.json` from that source. Read its stylesheet if it has one. Build with the declared Bun
 script and install its `dist/` folder. When editing an existing bundle, follow
 its working builder and manifest.
 
-Use the typed `createSurfaceClient()` from `@zurge-co/ponpoko-surface-sdk`, call
-`bindSurfaceTheme()` and send `ready()` after the screen initializes. Dispose
-both on page close. Use semantic `--pp-*` variables. Keep prompt-specific
-overrides in the surface stylesheet. Cmd/Ctrl+K and Cmd/Ctrl+1–9 belong to the
+Use the typed `createSurfaceClient()` from `@ponpoko-app/surface-sdk` and
+send `ready()` after the screen initializes. Dispose on page close. Design the
+HTML and CSS for the person's workflow. Opt into `bindSurfaceTheme()` and the
+SDK styles when they fit. Cmd/Ctrl+K and Cmd/Ctrl+1–9 belong to the
 Host. Preserve the reserved chords in all surfaces.
 
-For AI, use `host.ai` or import `createBackendAi` from
-`@zurge-co/ponpoko-surface-sdk/backend`. Keep the declared AI contract and use
+For Host AI, pass `ai_io` to seed the declaration and fixtures at creation.
+Use `host.ai` or import `createBackendAi` from
+`@ponpoko-app/surface-sdk/backend`. Keep the declared AI contract and use
 representative requests in `ai-requests.json`. Check setup without inference
 with `validate(request, true)`. An aborted or timed-out mutation can have an
 unknown outcome. Inspect the original receipt or side effect before retrying.

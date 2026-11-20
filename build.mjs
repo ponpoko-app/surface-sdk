@@ -1,40 +1,92 @@
-import { cp, access, mkdtemp, readFile, rename, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { constants } from "node:fs";
+import { access, chmod, copyFile, cp, lstat, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SCHEMA, CONTRACT, validateSchema } from "./host-ai.mjs";
-import { isDeepStrictEqual } from "node:util";
+import { checkBundlePath, checkSurface } from "./scripts/check-surface.mjs";
 
 const sdkRoot = fileURLToPath(new URL(".", import.meta.url));
-const required = ["surface.json", "index.html", "surface.css"];
+const stylesheets = { tokens: "tokens.css", components: "components.css" };
 
-export async function buildSurface({ entry = "main.ts", assets = [], backends = [] } = {}) {
-  const manifest = JSON.parse(await readFile("surface.json", "utf8"));
-  if (manifest.requires?.ai !== undefined) {
-    if (manifest.requires.ai !== CONTRACT.version) throw new Error("ai_contract_mismatch: refresh the Host AI SDK before building.");
-    const schema = JSON.parse(await readFile("ai-contract.json", "utf8"));
-    if (!isDeepStrictEqual(schema, SCHEMA)) throw new Error("ai_contract_mismatch: ai-contract.json and the pinned SDK disagree.");
-    const samples = JSON.parse(await readFile("ai-requests.json", "utf8"));
-    if (!Array.isArray(samples) || !samples.length || samples.length > 64) throw new Error("ai-requests.json needs 1 to 64 representative requests.");
-    for (const input of samples) validateSchema(SCHEMA, SCHEMA.$defs.InferenceRequest, input, "ai-requests.json");
-    assets = [...assets, "ai-contract.json", "ai-requests.json"];
-  }
+export async function buildSurface({ entry = "main.ts", assets = [], backends = [], executables = {}, styles = ["tokens", "components"] } = {}) {
+  const manifestText = await readFile("surface.json", "utf8");
+  const manifest = JSON.parse(manifestText);
+  if (manifest.requires?.ai != null) assets = [...assets, "ai-contract.json", "ai-requests.json"];
 
   if (await access(".ponpoko-scaffold.json").then(() => true, () => false)) assets = [...assets, ".ponpoko-scaffold.json"];
+  if (await lstat("surface.css").catch(error => { if (error.code !== "ENOENT") throw error; })) assets = [...assets, "surface.css"];
   const stage = await mkdtemp(".ponpoko-build-");
   try {
-    for (const path of new Set([...required, ...assets])) {
+    const stagedManifest = join(stage, "surface.json");
+    await writeFile(stagedManifest, manifestText);
+    for (const path of new Set(["index.html", ...assets])) {
+      if (path === "surface.json") continue;
       if (path !== ".ponpoko-scaffold.json" && !/^[a-z0-9_-][a-z0-9_.-]*(?:\/[a-z0-9_-][a-z0-9_.-]*)*$/i.test(path)) throw new Error(`Invalid build asset path: ${path}`);
       await cp(path, join(stage, path), { recursive: true, verbatimSymlinks: true });
     }
-    await cp(join(sdkRoot, "ui/tokens.css"), join(stage, "sdk-tokens.css"));
-    await cp(join(sdkRoot, "ui/components.css"), join(stage, "sdk-components.css"));
+    for (const style of new Set(styles)) {
+      if (!Object.hasOwn(stylesheets, style)) throw new Error(`Unknown SDK stylesheet: ${style}`);
+      const file = stylesheets[style];
+      await cp(join(sdkRoot, "ui", file), join(stage, `sdk-${file}`));
+    }
     await cp(join(sdkRoot, "LICENSE"), join(stage, "ponpoko-sdk-license.txt"), { force: false, errorOnExist: true });
     await bundle([entry], stage, "browser", "main.js");
     if (backends.length) await bundle(backends, stage, "bun", "[name].js");
-    await rm("dist", { force: true, recursive: true });
-    await rename(stage, "dist");
+    for (const [kind, source] of Object.entries(executables)) {
+      if (kind !== "backend" && kind !== "cli") throw new Error(`Unknown executable: ${kind}`);
+      if (source === undefined) continue;
+      await stageExecutable(stage, manifest[kind], kind, source);
+    }
+    if (Object.values(executables).some(source => source !== undefined)) {
+      await writeFile(stagedManifest, JSON.stringify(manifest, null, 2) + "\n");
+    }
+    await checkSurface(stage);
+    await replaceDist(stage);
   } finally {
     await rm(stage, { force: true, recursive: true });
+  }
+}
+
+async function stageExecutable(stage, program, kind, source) {
+  const command = program?.command;
+  checkBundlePath(command, `${kind}.command`);
+  if (!(await stat(source)).isFile()) throw new Error(`The ${kind} executable must be a regular file`);
+  const extension = extname(source).toLowerCase();
+  if (extension === ".exe" && extname(command).toLowerCase() !== ".exe") program.command = command + ".exe";
+  const parts = program.command.split("/");
+  const name = parts.pop();
+  let directory = stage;
+  for (const part of parts) {
+    directory = join(directory, part);
+    await mkdir(directory).catch(error => { if (error.code !== "EEXIST") throw error; });
+    if (!(await lstat(directory)).isDirectory()) throw new Error(`Invalid executable directory: ${kind}.command`);
+  }
+  const output = join(directory, name);
+  await copyFile(source, output, constants.COPYFILE_EXCL);
+  if (process.platform !== "win32") await chmod(output, 0o755);
+}
+
+async function replaceDist(stage) {
+  const backup = await mkdtemp(".ponpoko-previous-");
+  const previous = join(backup, "dist");
+  let restoreFailed = false;
+  try {
+    const hadDist = await rename("dist", previous).then(() => true, error => {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    });
+    try { await rename(stage, "dist"); }
+    catch (error) {
+      if (hadDist) {
+        try { await rename(previous, "dist"); }
+        catch (restoreError) {
+          restoreFailed = true;
+          throw new AggregateError([error, restoreError], `Could not restore dist. The previous bundle is at ${previous}.`);
+        }
+      }
+      throw error;
+    }
+  } finally {
+    if (!restoreFailed) await rm(backup, { force: true, recursive: true });
   }
 }
 

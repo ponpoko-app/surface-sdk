@@ -1,10 +1,13 @@
 {
-  "name": "@zurge-co/ponpoko-surface-sdk",
-  "version": "1.1.0",
+  "name": "@ponpoko-app/surface-sdk",
+  "version": "1.3.0",
   "type": "module",
   "description": "Build Ponpoko surfaces with a pinned starter, native controls and the typed Host broker.",
   "engines": {
     "node": ">=22"
+  },
+  "bin": {
+    "ponpoko-surface": "./bin/ponpoko-surface.mjs"
   },
   "exports": {
     ".": {
@@ -39,6 +42,14 @@
       "types": "./build.d.mts",
       "default": "./build.mjs"
     },
+    "./testing": {
+      "types": "./testing.d.mts",
+      "default": "./testing.mjs"
+    },
+    "./storage": {
+      "types": "./storage.d.mts",
+      "default": "./storage.mjs"
+    },
     "./tokens.css": "./ui/tokens.css",
     "./components.css": "./ui/components.css",
     "./ai-contract.json": "./ai-contract.json",
@@ -53,7 +64,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zurge-co/ponpoko-surface-sdk.git"
+    "url": "git+https://github.com/ponpoko-app/surface-sdk.git"
   },
   "publishConfig": {
     "access": "public",
@@ -65,7 +76,13 @@
     "SKILL.md",
     "starter",
     "ui",
+    "bin/ponpoko-surface.mjs",
     "build.*",
+    "testing.*",
+    "storage.*",
+    "scripts/check-surface.mjs",
+    "scripts/secrets.mjs",
+    "secret-policy.json",
     "surface.*",
     "wait.mjs",
     "theme.*",

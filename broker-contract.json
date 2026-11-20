@@ -13,7 +13,10 @@
       "files.save",
       "preferences.list",
       "settings.open",
-      "link.open"
+      "link.open",
+      "storage.get",
+      "storage.set",
+      "storage.remove"
     ],
     "host.work": [
       "list",

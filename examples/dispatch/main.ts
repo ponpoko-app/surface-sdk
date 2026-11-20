@@ -1,7 +1,7 @@
-import { createSurfaceClient } from "@zurge-co/ponpoko-surface-sdk";
-import type { InferenceRequest } from "@zurge-co/ponpoko-surface-sdk/ai";
-import { bindSurfaceTheme } from "@zurge-co/ponpoko-surface-sdk/theme";
-import { setButtonBusy, setFieldError, setStatus } from "@zurge-co/ponpoko-surface-sdk/ui";
+import { createSurfaceClient } from "@ponpoko-app/surface-sdk";
+import type { InferenceRequest } from "@ponpoko-app/surface-sdk/ai";
+import { bindSurfaceTheme } from "@ponpoko-app/surface-sdk/theme";
+import { setButtonBusy, setFieldError, setStatus } from "@ponpoko-app/surface-sdk/ui";
 import { addJob, sample, toggleJob, type Job } from "./queue.ts";
 
 const rows = document.querySelector<HTMLTableSectionElement>("#rows")!;

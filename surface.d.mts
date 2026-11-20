@@ -38,20 +38,30 @@ export interface CompatibilityResult {
 type FollowOptions = AiRequestOptions & { after?: number; intervalMs?: number };
 type HostNamespace = keyof HostOperations;
 type HostOperation<N extends HostNamespace> = keyof HostOperations[N];
-type CallArgs<T> = T extends [undefined, unknown]
+type CallArgs<T> = T extends readonly [undefined, unknown]
   ? [payload?: Record<string, never>, options?: AiRequestOptions]
-  : T extends [infer Input, unknown]
+  : T extends readonly [infer Input, unknown]
     ? {} extends Input ? [payload?: Input, options?: AiRequestOptions] : [payload: Input, options?: AiRequestOptions]
     : never;
-type CallResult<T> = T extends [unknown, infer Output] ? Output : never;
-export interface SurfaceClient {
+type CallResult<T> = T extends readonly [unknown, infer Output] ? Output : never;
+
+type BackendContract<Methods> = { [Name in keyof Methods]: readonly [input: unknown, output: unknown] };
+type BackendCall<Methods> = [Methods] extends [never]
+  ? <T = unknown>(method: string, params?: unknown, options?: AiRequestOptions) => Promise<T>
+  : <Name extends Extract<keyof Methods, string>>(method: Name, ...args: CallArgs<Methods[Name]>) => Promise<CallResult<Methods[Name]>>;
+
+export type BackendHandlers<Methods extends BackendContract<Methods>> = {
+  [Name in keyof Methods]: (params: Methods[Name][0]) => Methods[Name][1] | Promise<Methods[Name][1]>;
+};
+
+export interface SurfaceClient<Methods extends BackendContract<Methods> = never> {
   research: { search(input: SearchRequest, options?: AiRequestOptions): Promise<SearchResponse> };
   ai: HostAi;
   ready(): Promise<BrokerControl>;
   call<N extends HostNamespace, O extends HostOperation<N>>(
     namespace: N, operation: O, ...args: CallArgs<HostOperations[N][O]>
   ): Promise<CallResult<HostOperations[N][O]>>;
-  backend<T = unknown>(method: string, params?: unknown, options?: AiRequestOptions): Promise<T>;
+  backend: BackendCall<Methods>;
   checkCompatibility(options?: { ai?: boolean }): Promise<CompatibilityResult>;
   workEvents(workId: string, options?: FollowOptions): AsyncGenerator<WorkEventsPage, void>;
   inferenceEvents(requestId: string, options?: FollowOptions): AsyncGenerator<AiEventRow, Extract<AiReceipt, { found: true }> | void>;
@@ -62,4 +72,6 @@ export interface SurfaceClient {
 }
 export declare function checkHost(hello: BrokerControl, options?: { ai?: boolean }): CompatibilityResult;
 export declare function parentTransport(frame?: Window): Transport;
-export declare function createSurfaceClient(options?: { view?: string | null; transport?: Transport; timeoutMs?: number }): SurfaceClient;
+export declare function createSurfaceClient<Methods extends BackendContract<Methods> = never>(
+  options?: { view?: string | null; transport?: Transport; timeoutMs?: number },
+): SurfaceClient<Methods>;

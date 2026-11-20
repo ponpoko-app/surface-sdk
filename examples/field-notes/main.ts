@@ -1,6 +1,6 @@
-import { createSurfaceClient } from "@zurge-co/ponpoko-surface-sdk";
-import { bindSurfaceTheme } from "@zurge-co/ponpoko-surface-sdk/theme";
-import { setFieldError, setStatus } from "@zurge-co/ponpoko-surface-sdk/ui";
+import { createSurfaceClient } from "@ponpoko-app/surface-sdk";
+import { bindSurfaceTheme } from "@ponpoko-app/surface-sdk/theme";
+import { setFieldError, setStatus } from "@ponpoko-app/surface-sdk/ui";
 import { sample, saveEntry, type Entry } from "./notebook.ts";
 
 function element<T extends HTMLElement>(id: string) { return document.getElementById(id) as T; }

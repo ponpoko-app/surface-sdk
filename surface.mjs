@@ -33,6 +33,7 @@ export function parentTransport(frame = globalThis.window) {
 const READS = new Set([
   "host.platform.protocol.info", "host.platform.preferences.list", "host.platform.providers.list",
   "host.work.list", "host.work.get", "host.work.events.subscribe", "host.work.events.unsubscribe",
+  "host.platform.storage.get",
 ]);
 
 export function createSurfaceClient({ view = new URLSearchParams(globalThis.location?.search ?? "").get("view"), transport, timeoutMs = 65000 } = {}) {
@@ -95,7 +96,7 @@ export function createSurfaceClient({ view = new URLSearchParams(globalThis.loca
       if (!held) return;
       held.release();
       if (message.ok) held.resolve(message.result);
-      else if (held.ai && message.error?.code === "host_unavailable") held.abandon("host_unavailable", message.error.message || "The Host did not confirm the AI response.");
+      else if (held.needsConfirmation && message.error?.code === "host_unavailable") held.abandon("host_unavailable", message.error.message || "The Host did not confirm the response.");
       else held.reject(new HostError(message.error?.code ?? "host_unavailable", message.error?.message ?? "Host request failed.", { ...message.error, request_id: held.identity }));
     } else if (typeof message.event_id === "string" && Number.isSafeInteger(message.seq) && message.type === "providers-changed") {
       for (const handler of events) handler(message);
@@ -116,6 +117,7 @@ export function createSurfaceClient({ view = new URLSearchParams(globalThis.loca
     const ai = door === "host.platform.ai.request";
     const identity = ai ? payload.input?.request_id ?? payload.request_id ?? request_id : request_id;
     const uncertain = !(READS.has(door) || (ai && !uncertainAiOperation(payload.operation)));
+    const needsConfirmation = ai || door === "host.platform.storage.set" || door === "host.platform.storage.remove";
     return new Promise((resolve, reject) => {
       function release() {
         clearTimeout(timer);
@@ -131,7 +133,7 @@ export function createSurfaceClient({ view = new URLSearchParams(globalThis.loca
       }
       function cancel() { abandon("aborted", "The SDK stopped waiting for the Host response."); }
       const timer = setTimeout(() => abandon("host_unavailable", "The Host response was not confirmed."), timeoutMs);
-      pending.set(request_id, { resolve, reject, release, abandon, identity, ai });
+      pending.set(request_id, { resolve, reject, release, abandon, identity, needsConfirmation });
       signal?.addEventListener("abort", cancel, { once: true });
       try { transport.post({ channel: BROKER_CHANNEL, view, request_id, namespace, operation, payload }); }
       catch { abandon("host_unavailable", "The request could not reach the Host."); }

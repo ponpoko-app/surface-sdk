@@ -7,23 +7,42 @@ lockfile into every new source folder. Existing surfaces can keep their builder.
 
 ## Build a surface
 
-Edit `index.html`, `main.ts` and `surface.css`. Keep one navigation contribution
-in `surface.json`. Run `bun install --frozen-lockfile --ignore-scripts`,
-`bun run build` and `bun test`. Install `dist/` in Ponpoko. The build includes
-the browser code and CSS and accepts explicit extra assets and Bun backend
-entrypoints through `buildSurface({ assets, backends })`.
+Edit `index.html` and `main.ts` for your workflow. Keep one navigation contribution
+in `surface.json`. Run `bun install --frozen-lockfile --ignore-scripts` and
+`bun run build`. Add a test script for your workflow. Install `dist/` in Ponpoko.
+The build includes the browser code and an optional `surface.css`, and accepts explicit extra assets and Bun backend
+entrypoints through `buildSurface({ assets, backends })`. Run
+`npx ponpoko-surface check dist` for an offline check of the manifest, bundle
+files, credential guard and declared AI contract. Installation, inference and
+visual behavior need separate evidence.
+
+For a compiled program, declare its path under `backend.command` or
+`cli.command` in `surface.json`. Pass the compiler output to the builder.
+
+```js
+await buildSurface({ executables: { backend: "target/release/notes-backend" } });
+```
+
+The surface owns compilation. The builder copies each program to the declared
+path, makes it executable on Unix, and carries an input `.exe` suffix into the
+staged manifest. It validates the full staged bundle before replacing `dist/`.
 
 Once published, an existing project can run
-`bun add --exact @zurge-co/ponpoko-surface-sdk@1.1.0`. Use the desktop's pinned tarball
+`bun add --exact @ponpoko-app/surface-sdk@1.3.0`. Use the desktop's pinned tarball
 for new surfaces and offline builds. Keep the resolved dependency and lockfile
 together. The SDK version describes the source toolchain. Broker protocol 1 and
 the declared Host AI contract version and digest govern runtime compatibility.
 
+To upgrade a source project from `@zurge-co/ponpoko-surface-sdk`, replace the
+dependency and its import prefixes with `@ponpoko-app/surface-sdk`, then update
+the project's lockfile. Existing installed bundles already contain their built
+SDK code.
+
 ## Frame and services
 
 ```ts
-import { createSurfaceClient } from "@zurge-co/ponpoko-surface-sdk";
-import { bindSurfaceTheme } from "@zurge-co/ponpoko-surface-sdk/theme";
+import { createSurfaceClient } from "@ponpoko-app/surface-sdk";
+import { bindSurfaceTheme } from "@ponpoko-app/surface-sdk/theme";
 
 const host = createSurfaceClient();
 const unbind = bindSurfaceTheme(host);
@@ -35,7 +54,29 @@ const { identity } = await host.call("host.platform", "protocol.info");
 Call `ready()` after initializing the screen. The parent frame and its view token
 identify the surface. TypeScript maps each broker operation to its input and
 output. `host.backend<Result>(method, params)` uses the installed surface's
-declared backend methods. The platform covers attachments, file save dialogs,
+declared backend methods. For typed method names and arguments, share a method
+map between the client and TypeScript backend handlers:
+
+```ts
+import { createSurfaceClient, type BackendHandlers } from "@ponpoko-app/surface-sdk";
+
+interface NotesMethods {
+  "note.list": [undefined, string[]];
+  "note.read": [{ id: string }, { body: string } | null];
+}
+
+const handlers: BackendHandlers<NotesMethods> = {
+  "note.list": () => ["welcome"],
+  "note.read": ({ id }) => id === "welcome" ? { body: "Hello" } : null,
+};
+const host = createSurfaceClient<NotesMethods>();
+await host.backend("note.list");
+await host.backend("note.read", { id: "welcome" });
+```
+
+The method map is a TypeScript contract. Declare the matching names in
+`surface.json` and validate untrusted input in the backend. The platform covers
+attachments, file save dialogs,
 preferences, provider summaries, settings, external links, research and AI.
 The surface namespace covers a file dialog, clipboard reading and backend calls.
 The work namespace covers listing, reading, cursor pages, appending instructions,
@@ -50,10 +91,7 @@ The broker's unsubscribe operation is an acknowledgement. Aborting the SDK
 iterator ends its polling.
 
 The file-save operations return a selected path. File writes are a
-surface-backend operation. Host-managed same-origin storage is a separate
-transport, available at `/.ponpoko-storage`. The broker client has no storage
-wrapper. The starter uses browser storage for the sample note, so that note is
-outside the Host-managed SQLite backup and restore path.
+surface-backend operation.
 
 Pass `{ signal }` as the last argument to release a pending call. Aborting a
 dispatched mutation only stops the local wait. A transport loss or abort after
@@ -61,12 +99,60 @@ dispatch can raise `unknown_outcome`; inspect the original ID or side effect
 before retrying. Dispose the client to release listeners and outstanding waits.
 Cmd/Ctrl+K and Cmd/Ctrl+1–9 are reserved by the desktop.
 
+## Save small values in the Host
+
+```ts
+import { createSurfaceStorage } from "@ponpoko-app/surface-sdk/storage";
+
+const storage = createSurfaceStorage(host);
+const draft = (await storage.get("draft")) ?? "";
+await storage.set("draft", draft);
+```
+
+The client routes requests through the registered surface's broker to Host
+storage and its backup path. Use a desktop Host that advertises the storage
+operations. A standalone preview can use a client backed by `createMockHost`.
+`get` returns `null` for an absent key. `set` and `remove` resolve after the Host
+confirms. Keep the draft visible on failure. For `HostError` with
+`code: "unknown_outcome"`, read the stored value before retrying a write.
+The Host limits each value to 1 MiB and the entire store to 5 MiB.
+
+## Test with a simulated Host
+
+Import `createMockHost` from `@ponpoko-app/surface-sdk/testing`. It supplies
+a `view` and `transport` for the real client. It performs the handshake and
+records requests so tests can assert what was sent.
+
+```js
+const mock = createMockHost({
+  onRequest: request => request.payload?.method === "note.list" ? { ok: true, result: [] } : undefined,
+});
+const host = createSurfaceClient({ view: mock.view, transport: mock.transport, timeoutMs: 50 });
+try {
+  await host.ready();
+  const notes = await host.backend("note.list");
+} finally {
+  host.dispose();
+}
+```
+
+Use `mock.setPalette(tokens, appearance)` or `mock.drop(paths)` to deliver Host
+events. Return `{ ok: false, error: { code: "host_unavailable", message: "Offline" } }`
+for a backend error, or `undefined` to leave a request unanswered for a timeout
+test. A successful empty result, such as `[]`, is a separate case. Tests using
+this transport run without a native window or provider requests.
+
 ## UI and appearance
 
-Load `tokens.css` and `components.css` before the surface stylesheet. The starter
-build places them at `sdk-tokens.css` and `sdk-components.css` in `dist/`.
-The defaults come from the SDK. The Host fills its inherited roles through
-`bindSurfaceTheme`, including its scheme and typography. Surface declarations of
+New starters use `buildSurface({ styles: [] })` and begin with native HTML.
+Use your own stylesheet with the live `--pp-host-*` values from `bindSurfaceTheme`,
+or opt into the SDK styles. `styles: ["tokens"]` copies `sdk-tokens.css`. Add
+`"components"` to copy `sdk-components.css`. Link the chosen files before your
+stylesheet in HTML. The components sheet includes page-wide defaults. Calls that
+omit `styles` continue to copy both files for existing builders.
+
+The Host fills inherited roles through `bindSurfaceTheme`, including its scheme
+and typography. With the token sheet, surface declarations of
 `--pp-*` in `surface.css` take precedence and can be scoped to a subtree. Delete
 a declaration to inherit the live Host value again. Leave `--pp-host-*` to the
 binding. For a surface that intentionally fixes light or dark, set `--pp-scheme`.
@@ -88,21 +174,24 @@ failed save. A disabled or busy state should not be the only feedback.
 
 See the source examples in the SDK repository. **Dispatch queue** inherits
 Host colors with compact controls, and **Field notebook** overrides the canvas,
-ink, type and accent in its own stylesheet. To run either, create a fresh source
-folder in Ponpoko and overlay the matching folder under `examples/`. Run
-`surface_build`, install the returned `dist/` and run the source suite. The
-example data belongs to the demonstration.
+ink, type and accent in its own stylesheet. To run either, create fresh source
+in Ponpoko and overlay the matching folder under `examples/`. Set
+`styles: ["tokens", "components"]` in `build.mjs` and add a `test` script
+using `bun test`. For Dispatch, enable Host AI with text input and output.
+Run `surface_build`, install `dist/` and run the suite with demonstration data.
 
 ## Host AI
 
-Declare `requires.ai` from the starter, keep `ai-contract.json`, and edit
+Pass `ai_io` to `surface_create` to declare `requires.ai` and seed editable
+fixtures. To add AI to an existing surface, declare the running Host's AI
+contract version, copy `@host/ai-contract.json` into source and create
 `ai-requests.json` with safe representative inputs. The schema and the build's
 local validation need no credentials. The Host chooses available connections
 from input/output modalities; `ai.slots()` lists configured capabilities.
 `ai.validate(request, true)` checks setup without starting inference.
 
 ```ts
-import type { InferenceRequest } from "@zurge-co/ponpoko-surface-sdk/ai";
+import type { InferenceRequest } from "@ponpoko-app/surface-sdk/ai";
 
 const request: InferenceRequest = {
   request_id: crypto.randomUUID(),
@@ -132,7 +221,7 @@ cancellation. Use `jobStatus(id)` and `jobCancel(id)` for an invocation that
 returned a media job. Adapter capabilities and returned jobs depend on the
 running Host and configured slots.
 
-A backend imports `createBackendAi` from `@zurge-co/ponpoko-surface-sdk/backend`. It uses
+A backend imports `createBackendAi` from `@ponpoko-app/surface-sdk/backend`. It uses
 the Host's authenticated loopback control endpoint and never receives provider
 credentials. Existing browser surfaces can still use the Host-injected
 `window.ponpoko.ai`. Catalog release and package API validation belongs to

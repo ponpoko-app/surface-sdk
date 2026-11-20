@@ -22,6 +22,9 @@ export interface HostOperations {
     "preferences.list": [undefined, Array<{ key: string; value: string }>];
     "settings.open": [{ destination: SettingsDestination }, true];
     "link.open": [{ href: string }, true];
+    "storage.get": [{ key: string }, string | null];
+    "storage.set": [{ key: string; value: string }, true];
+    "storage.remove": [{ key: string }, true];
   }>;
   "host.work": Checked<WorkOperation, {
     list: [{ workspace_id?: string }, WorkSnapshot[]];

@@ -6,7 +6,7 @@ uses a simulated parent and local fixtures, never a provider. It runs without
 the private Host repository. Tests that cannot reach a Host do not label that
 Host compatible.
 
-`node scripts/check-surface.mjs <bundle>` checks manifest fields and declared
+`npx ponpoko-surface check <bundle>` checks manifest fields and declared
 entry/program files, rejects paths leaving the bundle, and checks the required
 AI schema and representative requests against this SDK. It reports
 `offline_contract_verified`, `host: unmeasured`, `paid_requests: 0`, and leaves
@@ -22,7 +22,7 @@ const evidence = await client.checkCompatibility({ ai: true });
 This checks the actual parent's protocol and AI descriptor. It neither selects
 a provider nor invokes a model. The SDK hello example displays the protocol
 check without requiring AI. A captured complete hello message can be used with
-`node scripts/check-surface.mjs <bundle> --host-hello <hello.json>` to compare
+`npx ponpoko-surface check <bundle> --host-hello <hello.json>` to compare
 contracts offline. Such a file is captured evidence only; the CLI cannot prove
 its origin or that the Host is still running.
 

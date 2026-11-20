@@ -1,19 +1,22 @@
 # __NAME__
 
-Edit `index.html`, `main.ts` and `surface.css` to implement the requested
-workflow. The sample note form can be replaced. Keep the SDK imports, and send
-`host.ready()` after your screen is usable. With no frame, the page opens as a
-standalone preview.
+Edit `index.html` and `main.ts` for the requested workflow. Call
+`host.ready()` when the screen is usable and dispose the client on page close.
+With no frame, the page opens as a standalone preview.
 
-- `surface.css` loads after the SDK styles. Set semantic `--pp-*` variables in
-  `:root` or on a subtree. Delete a declaration to inherit the Host role again.
-- Keep `surface.json` and its single navigation contribution. `requires.ai`
-  expresses runtime compatibility. Update `ai-requests.json` for AI workflows.
-  The default sample proves the contract locally without invoking a model.
-- Replace `note.test.ts` with tests for the actual workflow. Run `bun test`.
+- Add your own stylesheet as needed. The builder copies `surface.css` when present.
+  Link it in the HTML. Other static files can be listed under `assets` in `build.mjs`.
+- To inherit the live Host palette and typography, call `bindSurfaceTheme(host)`
+  and consume the `--pp-host-*` variables in your CSS. For the SDK tokens or
+  controls, select the styles in `build.mjs` and link them in the HTML. See the SDK README.
+- Keep the single navigation contribution in `surface.json`. To add Host AI later,
+  declare `requires.ai`, copy the running Host schema from `@host/ai-contract.json`
+  into source and add `ai-requests.json` with safe samples for your workflow.
+- Add a `test` script to `package.json` and test the actual workflow.
 - Run `bun install --frozen-lockfile --ignore-scripts` and `bun run build`.
   The SDK tarball under `vendor/` is part of the source. Keep it with `bun.lock`.
   Run `bun add` explicitly when adding dependencies. Local builds use Bun.
+- Run `npx ponpoko-surface check dist` for the offline bundle check.
 - Install `dist/` with `surface_install` and inspect the open surface.
   Include `dist/ponpoko-sdk-license.txt` when distributing the bundle.
   Keep `node_modules/` and `dist/` out of source control.
@@ -24,6 +27,6 @@ while a surface input has focus.
 
 Use `host.call(namespace, operation, payload)` for the typed broker,
 `host.onPalette`, `host.onDrop` and `host.onEvent` for pushes and
-`host.workEvents(id, { signal })` for the work cursor. Use `host.ai.validate`
-for a setup check, and use the caller's explicit action to start inference.
-Read the SDK README for receipts, cancellation and media jobs.
+`host.workEvents(id, { signal })` for the work cursor. Use `createSurfaceStorage(host)`
+from the SDK's `/storage` module for small values that should follow the Host's
+backup and restore path. Keep the draft until the write succeeds.

@@ -8,6 +8,10 @@ import { checkSecrets } from "./secrets.mjs";
 
 async function json(path) { return JSON.parse(await readFile(path, "utf8")); }
 
+export function checkBundlePath(value, field) {
+  if (typeof value !== "string" || !value.trim() || /[\\:\u0000]/.test(value) || value.split("/").some(part => part === ".." || part === "." || !part)) throw new Error(`Invalid relative path: ${field}`);
+}
+
 export async function checkSurface(directory, { hostHello } = {}) {
   const root = await realpath(directory);
   const manifest = await json(resolve(root, "surface.json"));
@@ -35,7 +39,7 @@ export async function checkSurface(directory, { hostHello } = {}) {
   if (!Array.isArray(methods) || methods.length > 64 || new Set(methods).size !== methods.length || methods.some(method => typeof method !== "string" || method.length > 64 || !/^[a-z0-9][a-z0-9_]*(?:\.[a-z0-9][a-z0-9_]*){1,3}$/.test(method))) throw new Error("Invalid backend methods");
   if (methods.length && !manifest.backend) throw new Error("Declared methods require a backend");
   for (const [field, value] of paths) {
-    if (typeof value !== "string" || !value.trim() || value.startsWith("/") || value.includes("\\") || value.includes(":") || value.split("/").some(part => part === ".." || part === "." || !part)) throw new Error(`Invalid relative path: ${field}`);
+    checkBundlePath(value, field);
     const path = await realpath(resolve(root, value));
     const rel = relative(root, path);
     if (rel === ".." || rel.startsWith(`..${sep}`) || !(await stat(path)).isFile()) throw new Error(`${field} leaves the bundle or is not a regular file`);
@@ -62,11 +66,14 @@ export async function checkSurface(directory, { hostHello } = {}) {
   return { status: "offline_contract_verified", surface_id: manifest.id, samples, sdk_ai_contract: CONTRACT, host: compatibility ?? "unmeasured", host_evidence: compatibility ? "captured_descriptor_only" : "unmeasured", paid_requests: 0, inference: "unmeasured", visual: "unmeasured" };
 }
 
-const invoked = process.argv[1] && await realpath(resolve(process.argv[1])).catch(() => null);
-if (invoked && import.meta.url === pathToFileURL(invoked).href) {
+export async function runCheck(args, usage) {
   try {
-    const args = process.argv.slice(2);
-    if (!args[0] || args.length !== (args[1] === "--host-hello" ? 3 : 1)) throw new Error("Usage: node scripts/check-surface.mjs <bundle> [--host-hello <captured-json>]");
+    if (!args[0] || args.length !== (args[1] === "--host-hello" ? 3 : 1)) throw new Error(usage);
     console.log(JSON.stringify(await checkSurface(args[0], { hostHello: args[2] ? await json(args[2]) : undefined }), null, 2));
   } catch (error) { console.error(error.message); process.exitCode = 1; }
+}
+
+const invoked = process.argv[1] && await realpath(resolve(process.argv[1])).catch(() => null);
+if (invoked && import.meta.url === pathToFileURL(invoked).href) {
+  await runCheck(process.argv.slice(2), "Usage: node scripts/check-surface.mjs <bundle> [--host-hello <captured-json>]");
 }

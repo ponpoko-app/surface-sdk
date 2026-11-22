@@ -57,7 +57,7 @@ The file must be committed at the repository root on its public default branch.
 Ponpoko's authenticated `POST /v1/me/surfaces` registers `{ "repo": "owner/repository" }`
 and checks this declaration. `surface-publisher` handles registration after a
 successful push; the person does not need to claim manually. Open
-`https://ponpoko.app/surfaces` after registration succeeds. Report push and
+`https://surfaces.ponpoko.app/` after registration succeeds. Report push and
 registration as separate outcomes. Registration proves a repository link, not code
 safety or working functionality. Every changed revision needs a fresh
 `surface-publisher` security scan and explicit publication confirmation. If

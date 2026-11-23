@@ -38,6 +38,301 @@ export function validateSchema(root, schema, value, path = "$") {
   }
   return value;
 }
+const TOKENS_PER_MEDIA = 1500;
+const DEFAULT_RESERVED_OUTPUT = 8192;
+const HARD_INPUT_BYTES = 12 * 1024 * 1024;
+const UTF8 = new TextEncoder();
+
+function positiveInt(value) {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+function clampRatio(value, fallback) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 && value < 1 ? value : fallback;
+}
+
+function supportsIo(offered, required) {
+  if (!offered || !required || !Array.isArray(offered.inputs) || !Array.isArray(offered.outputs)) return false;
+  return required.inputs.every(item => offered.inputs.includes(item))
+    && required.outputs.every(item => offered.outputs.includes(item));
+}
+
+function phaseRank(slotPhase, requested) {
+  const normalized = slotPhase ?? null;
+  if (requested) {
+    if (normalized === requested) return 0;
+    if (normalized === null) return 1;
+    return 2;
+  }
+  return normalized === null ? 0 : 1;
+}
+
+function ioSize(io) {
+  return (io?.inputs?.length ?? 0) + (io?.outputs?.length ?? 0);
+}
+
+function computeBudget(source, maxContext, maxBytes, maxOutput, options = {}) {
+  const triggerRatio = clampRatio(options.trigger_ratio, 0.75);
+  const targetRatio = Math.min(clampRatio(options.target_ratio, 0.5), triggerRatio);
+  const resolvedOutput = positiveInt(options.max_output_tokens) ?? maxOutput;
+  let safeInput = null;
+  let triggerTokens = null;
+  let targetTokens = null;
+  if (maxContext !== null) {
+    const reserved = Math.min(resolvedOutput ?? DEFAULT_RESERVED_OUTPUT, Math.floor(maxContext / 4));
+    safeInput = Math.max(1024, maxContext - reserved);
+    triggerTokens = Math.max(1024, Math.floor(safeInput * triggerRatio));
+    targetTokens = Math.max(512, Math.floor(safeInput * targetRatio));
+  }
+  const triggerBytes = maxBytes !== null ? Math.max(4096, Math.floor(maxBytes * triggerRatio)) : null;
+  const targetBytes = maxBytes !== null ? Math.max(2048, Math.floor(maxBytes * targetRatio)) : null;
+  return {
+    source,
+    max_context_tokens: maxContext,
+    max_input_bytes: maxBytes,
+    max_output_tokens: resolvedOutput,
+    safe_input_tokens: safeInput,
+    trigger_tokens: triggerTokens,
+    target_tokens: targetTokens,
+    trigger_bytes: triggerBytes,
+    target_bytes: targetBytes,
+  };
+}
+
+export function resolveContextBudget(slots, io, options = {}) {
+  const localMatches = (slots?.local ?? [])
+    .filter(slot => supportsIo(slot?.io, io))
+    .sort((a, b) => ioSize(a.io) - ioSize(b.io) || String(a.provider_id).localeCompare(String(b.provider_id)));
+  if (localMatches.length > 0) {
+    const chosen = localMatches[0];
+    return computeBudget("local", positiveInt(chosen.context_length), null, null, options);
+  }
+  const phase = options.phase ?? null;
+  const cloudMatches = (slots?.cloud ?? [])
+    .filter(slot => slot?.enabled && slot?.status === "active" && supportsIo(slot?.io, io) && (!phase || !slot.phase || slot.phase === phase))
+    .sort((a, b) =>
+      phaseRank(a.phase, phase) - phaseRank(b.phase, phase)
+      || ioSize(a.io) - ioSize(b.io)
+      || (a.position ?? 0) - (b.position ?? 0)
+      || String(a.slot_id).localeCompare(String(b.slot_id)),
+    );
+  if (cloudMatches.length > 0) {
+    const chosen = cloudMatches[0];
+    return computeBudget(
+      "cloud",
+      positiveInt(chosen.context_length),
+      positiveInt(chosen.max_input_bytes),
+      positiveInt(chosen.max_output_tokens),
+      options,
+    );
+  }
+  return computeBudget("none", null, null, null, options);
+}
+
+function estimateTextTokens(text) {
+  if (!text) return 0;
+  const bytes = UTF8.encode(text);
+  let ascii = 0;
+  let nonAscii = 0;
+  for (let i = 0; i < bytes.length; i += 1) {
+    if (bytes[i] < 128) ascii += 1;
+    else nonAscii += 1;
+  }
+  return Math.ceil(ascii / 4) + Math.ceil(nonAscii / 2);
+}
+
+function utf8ByteLength(text) {
+  return text ? UTF8.encode(text).length : 0;
+}
+
+function sliceHeadBytes(text, maxBytes) {
+  if (!text || utf8ByteLength(text) <= maxBytes) return text ?? "";
+  let used = 0;
+  let out = "";
+  for (const ch of text) {
+    const size = utf8ByteLength(ch);
+    if (used + size > maxBytes) break;
+    used += size;
+    out += ch;
+  }
+  return out;
+}
+
+function sliceTailBytes(text, maxBytes) {
+  if (!text || utf8ByteLength(text) <= maxBytes) return text ?? "";
+  const chars = Array.from(text);
+  let used = 0;
+  let start = chars.length;
+  for (let i = chars.length - 1; i >= 0; i -= 1) {
+    const size = utf8ByteLength(chars[i]);
+    if (used + size > maxBytes) break;
+    used += size;
+    start = i;
+  }
+  return chars.slice(start).join("");
+}
+
+function trimPartText(text, cap) {
+  const totalBytes = utf8ByteLength(text);
+  if (totalBytes <= cap) return text;
+  const head = sliceHeadBytes(text, Math.floor((cap * 2) / 3));
+  const tail = sliceTailBytes(text, Math.floor(cap / 4));
+  return `${head}\n\n[Compacted from ${totalBytes} bytes to fit the model context budget.]\n\n${tail}`;
+}
+
+export function estimateInputTokens(input, options = {}) {
+  const overheadBytes = positiveInt(options.overhead_bytes) ?? 0;
+  const overheadTokens = positiveInt(options.overhead_tokens) ?? Math.ceil(overheadBytes / 3);
+  let tokens = overheadTokens;
+  let bytes = overheadBytes;
+  let images = 0;
+  for (const part of Array.isArray(input) ? input : []) {
+    if (!part || typeof part !== "object") continue;
+    tokens += 8;
+    bytes += 48;
+    if (typeof part.text === "string") {
+      tokens += estimateTextTokens(part.text);
+      bytes += utf8ByteLength(part.text);
+    }
+    if (part.type !== "text" && (typeof part.data_base64 === "string" || typeof part.url === "string")) {
+      tokens += TOKENS_PER_MEDIA;
+      images += 1;
+      if (typeof part.data_base64 === "string") bytes += part.data_base64.length;
+      if (typeof part.url === "string") bytes += utf8ByteLength(part.url);
+    }
+    if (part.value !== undefined && part.value !== null) {
+      const encoded = JSON.stringify(part.value);
+      tokens += estimateTextTokens(encoded);
+      bytes += utf8ByteLength(encoded);
+    }
+  }
+  const lastTokens = positiveInt(options.last_input_tokens);
+  const lastBytes = positiveInt(options.last_sent_bytes);
+  if (lastTokens !== null && lastBytes !== null) {
+    if (bytes >= lastBytes) {
+      tokens = Math.max(tokens, lastTokens + Math.ceil((bytes - lastBytes) / 3));
+    } else {
+      tokens = Math.max(tokens, Math.floor((lastTokens * bytes) / lastBytes));
+    }
+  }
+  return { tokens, bytes, images };
+}
+
+function summarizeOmitted(omitted, maxBytes, header) {
+  let out = `${header || "[Compacted earlier conversation context]"} (${omitted.length} earlier entries summarized)\n`;
+  const firstUser = omitted.find(part => part.type === "text" && (part.role ?? "user") === "user" && typeof part.text === "string" && part.text.trim());
+  if (firstUser) {
+    out += `\nInitial request:\n${sliceHeadBytes(firstUser.text.trim(), 1200)}\n`;
+  }
+  const notes = [];
+  for (const part of omitted) {
+    const role = part.role ?? "user";
+    if (part.type === "text" && typeof part.text === "string") {
+      const compact = part.text.replace(/\s+/g, " ").trim();
+      if (compact) notes.push(`- ${role}: ${sliceHeadBytes(compact, 240)}`);
+    } else {
+      notes.push(`- ${role}: [omitted ${part.type} attachment: ${part.name || part.type}]`);
+    }
+  }
+  if (notes.length > 0) {
+    out += "\nKey earlier turns:\n";
+    for (const line of notes.slice(-12)) out += `${line}\n`;
+  }
+  if (utf8ByteLength(out) > maxBytes) {
+    return `${sliceHeadBytes(out, Math.max(256, maxBytes - 80))}\n[Summary trimmed to fit model context budget.]`;
+  }
+  return out;
+}
+
+function compactAtLevel(input, level, budget, options) {
+  const preserveSystem = options.preserve_system !== false;
+  const systemParts = [];
+  const bodyParts = [];
+  for (const part of input) {
+    if (preserveSystem && part?.role === "system") systemParts.push(part);
+    else bodyParts.push(part);
+  }
+  const defaultKeep = [6, 4, 2, 1, 1][Math.min(level, 4)];
+  const keepRecent = positiveInt(options.keep_recent) !== null ? Math.min(options.keep_recent, defaultKeep) : defaultKeep;
+  const baseSummaryCap = [16000, 10000, 6000, 3500, 2000][Math.min(level, 4)];
+  const summaryCap = budget.target_tokens
+    ? Math.min(baseSummaryCap, Math.max(1500, Math.floor((budget.target_tokens * 2) / 3)))
+    : baseSummaryCap;
+  const partCap = [32000, 16000, 8000, 4000, 2000][Math.min(level, 4)];
+  const systemCap = [Infinity, Infinity, 24000, 12000, 6000][Math.min(level, 4)];
+  const next = [];
+  for (const sys of systemParts) {
+    if (typeof sys.text === "string" && utf8ByteLength(sys.text) > systemCap) {
+      next.push({ ...sys, text: trimPartText(sys.text, systemCap) });
+    } else {
+      next.push({ ...sys });
+    }
+  }
+  let omittedParts = 0;
+  let kept = bodyParts;
+  if (bodyParts.length > keepRecent) {
+    const split = bodyParts.length - keepRecent;
+    omittedParts = split;
+    next.push({ type: "text", role: "user", text: summarizeOmitted(bodyParts.slice(0, split), summaryCap, options.summary_header) });
+    kept = bodyParts.slice(split);
+  }
+  const dropMedia = level >= 2;
+  let droppedMedia = 0;
+  for (const part of kept) {
+    if (part.type !== "text" && dropMedia) {
+      droppedMedia += 1;
+      continue;
+    }
+    if (level >= 1 && typeof part.text === "string" && utf8ByteLength(part.text) > partCap) {
+      next.push({ ...part, text: trimPartText(part.text, partCap) });
+    } else {
+      next.push({ ...part });
+    }
+  }
+  if (droppedMedia > 0) {
+    next.push({ type: "text", role: "user", text: `[Compaction note: ${droppedMedia} media attachment(s) omitted to fit the model context budget.]` });
+  }
+  return { input: next, omittedParts: omittedParts + droppedMedia };
+}
+
+export function compactInputParts(input, budget = {}, options = {}) {
+  const parts = Array.isArray(input) ? input : [];
+  const normalized = budget && typeof budget === "object" && (budget.trigger_tokens !== undefined || budget.target_tokens !== undefined)
+    ? budget
+    : computeBudget("custom", positiveInt(budget?.max_context_tokens), positiveInt(budget?.max_input_bytes), positiveInt(budget?.max_output_tokens), options);
+  const initial = estimateInputTokens(parts, options);
+  const overTrigger = initial.bytes > HARD_INPUT_BYTES
+    || (normalized.trigger_tokens !== null && initial.tokens >= normalized.trigger_tokens)
+    || (normalized.trigger_bytes !== null && initial.bytes >= normalized.trigger_bytes);
+  const explicitLevel = typeof options.level === "number" && Number.isInteger(options.level) ? Math.max(0, Math.min(4, options.level)) : null;
+  if (!options.force && explicitLevel === null && !overTrigger) {
+    return { input: parts.map(part => ({ ...part })), compacted: false, omitted_parts: 0, estimated_tokens: initial.tokens, estimated_bytes: initial.bytes, level: 0 };
+  }
+  const levels = explicitLevel !== null ? [explicitLevel] : [0, 1, 2, 3, 4];
+  let best = { input: parts.map(part => ({ ...part })), omittedParts: 0 };
+  let bestEst = initial;
+  let usedLevel = levels[0];
+  for (const level of levels) {
+    const candidate = compactAtLevel(parts, level, normalized, options);
+    const est = estimateInputTokens(candidate.input, options);
+    best = candidate;
+    bestEst = est;
+    usedLevel = level;
+    const underTarget = est.bytes <= HARD_INPUT_BYTES
+      && (normalized.target_tokens === null || est.tokens <= normalized.target_tokens)
+      && (normalized.target_bytes === null || est.bytes <= normalized.target_bytes);
+    if (underTarget) break;
+  }
+  const compacted = best.omittedParts > 0 || bestEst.bytes < initial.bytes || bestEst.tokens < initial.tokens;
+  return {
+    input: best.input,
+    compacted,
+    omitted_parts: best.omittedParts,
+    estimated_tokens: bestEst.tokens,
+    estimated_bytes: bestEst.bytes,
+    level: usedLevel,
+  };
+}
 export function uncertainAiOperation(operation) {
   return ["invoke", "invoke_stop", "invoke_job_cancel"].includes(operation);
 }
@@ -76,5 +371,14 @@ export function createHostAi(transport) {
     jobCancel: (request_id, options) => request("invoke_job_cancel", { request_id }, options),
     slots: options => request("slots", {}, options),
     usage: options => request("usage", {}, options),
+    contextBudget: async (io, options = {}) => {
+      const slots = await request("slots", {}, options);
+      return resolveContextBudget(slots, io, options);
+    },
+    compactInput: async (input, io, options = {}) => {
+      const slots = await request("slots", {}, options);
+      const budget = resolveContextBudget(slots, io, options);
+      return compactInputParts(input, budget, options);
+    },
   });
 }

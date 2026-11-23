@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
-import { createSurfaceClient, checkHost, parentTransport } from "../surface.mjs";
+import { createSurfaceClient, checkHost, parentTransport, resolveContextBudget, estimateInputTokens, compactInputParts } from "../surface.mjs";
 import { SCHEMA, CONTRACT, createHostAi } from "../host-ai.mjs";
 import { BROKER_CHANNEL, OPERATIONS } from "../protocol.mjs";
 import { checkSurface } from "../scripts/check-surface.mjs";
@@ -213,4 +213,56 @@ test("entry HTML local script, stylesheet and image references must exist in the
     await writeFile(resolve(directory, "index.html"), html.replace("</head>", '<link rel="stylesheet" href="../outside.css"></head>'));
     await assert.rejects(checkSurface(directory), /outside\.css/i);
   });
+});
+
+test("SDK context budget resolves per-phase Cloud and local limits and compacts Thai/long inputs safely", async () => {
+  const slots = {
+    local: [],
+    cloud: [
+      { slot_id: "slot_general", io: { inputs: ["image", "text"], outputs: ["text"] }, alias_id: "ponpoko-text-standard", pinned_alias_revision: null, enabled: true, position: 0, status: "active", reason: null, action: null, context_length: 1000000, max_input_bytes: null, max_output_tokens: null },
+      { slot_id: "slot_build", io: { inputs: ["image", "text"], outputs: ["text"] }, alias_id: "ponpoko-build", pinned_alias_revision: null, enabled: true, position: 0, status: "active", reason: null, action: null, phase: "build", context_length: 64000, max_input_bytes: null, max_output_tokens: 8192 },
+    ],
+    managed_by: "administrator",
+  };
+  const io = { inputs: ["text"], outputs: ["text"] };
+  const generalBudget = resolveContextBudget(slots, io);
+  assert.equal(generalBudget.source, "cloud");
+  assert.equal(generalBudget.max_context_tokens, 1000000);
+  const buildBudget = resolveContextBudget(slots, io, { phase: "build" });
+  assert.equal(buildBudget.max_context_tokens, 64000);
+  assert.ok(buildBudget.trigger_tokens < 64000 && buildBudget.target_tokens < buildBudget.trigger_tokens);
+
+  const localFirst = resolveContextBudget({
+    ...slots,
+    local: [{ io, provider_id: "ollama", model: "qwen", updated_at: 1, context_length: 32768 }],
+  }, io, { phase: "build" });
+  assert.equal(localFirst.source, "local");
+  assert.equal(localFirst.max_context_tokens, 32768);
+
+  const parts = [
+    { type: "text", role: "system", text: "Keep exact Shopee order totals." },
+    ...Array.from({ length: 12 }, (_, idx) => ({
+      type: "text",
+      role: idx % 2 === 0 ? "user" : "assistant",
+      text: `รายการ #${idx}: ${"บันทึกรายการ Shopee 🛒 ".repeat(140)}`,
+    })),
+  ];
+  const before = estimateInputTokens(parts);
+  assert.ok(before.tokens > 8000);
+  const compacted = compactInputParts(parts, { max_context_tokens: 10000, max_output_tokens: 2000 });
+  assert.equal(compacted.compacted, true);
+  assert.equal(compacted.input[0].role, "system");
+  assert.ok(compacted.input.length < parts.length);
+  assert.ok(compacted.estimated_tokens < before.tokens);
+  assert.ok(compacted.input.some(part => part.text?.includes("Compacted earlier conversation context")));
+
+  const ai = createHostAi(async envelope => {
+    assert.equal(envelope.operation, "slots");
+    return { ok: true, result: slots };
+  });
+  const liveBudget = await ai.contextBudget(io, { phase: "build" });
+  assert.equal(liveBudget.max_context_tokens, 64000);
+  const liveCompact = await ai.compactInput(parts, io, { force: true, keep_recent: 2 });
+  assert.equal(liveCompact.compacted, true);
+  assert.equal(liveCompact.input[0].role, "system");
 });

@@ -2,6 +2,8 @@ import type { BrokerControl, BrokerEvent, ErrorCode, HostAppearance } from "./pr
 import type { SearchRequest, SearchResponse } from "./research.d.mts";
 import type { AiEventRow, AiReceipt, AiRequestOptions, HostAi } from "./host-ai.mjs";
 import type { HostOperations, WorkEventsPage, WorkSnapshot } from "./host-operations.d.mts";
+export { resolveContextBudget, estimateInputTokens, compactInputParts } from "./host-ai.mjs";
+export type { AiContextBudget, AiContextBudgetOptions, AiTokenEstimate, AiTokenEstimateOptions, AiCompactOptions, AiCompactResult } from "./host-ai.mjs";
 export type { HostOperations, WorkEventsPage, WorkSnapshot } from "./host-operations.d.mts";
 export type { SearchRequest, SearchResponse, SearchResult } from "./research.d.mts";
 export type { HostAppearance } from "./protocol.ts";

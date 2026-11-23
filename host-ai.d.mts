@@ -37,10 +37,51 @@ export type AiValidation = {
   setup?: { status: "ready"; inference: "unmeasured" } | { status: "setup_required"; error: AiErrorBody; inference: "unmeasured" };
 };
 export type AiSlots = {
-  local: Array<{ io: ModelIo; provider_id: string; model: string; updated_at: number }>;
+  local: Array<{ io: ModelIo; provider_id: string; model: string; updated_at: number; context_length?: number | null }>;
   cloud: Array<{ slot_id: string; io: ModelIo | null; alias_id: string; pinned_alias_revision: number | null;
-    enabled: boolean; position: number; status: string; reason: string | null; action: string | null }>;
+    enabled: boolean; position: number; status: string; reason: string | null; action: string | null;
+    phase?: "design" | "build" | "verify" | null; context_length?: number | null;
+    max_input_bytes?: number | null; max_output_tokens?: number | null }>;
   managed_by: "administrator" | null;
+};
+export type AiContextBudgetOptions = {
+  phase?: "design" | "build" | "verify" | null;
+  max_output_tokens?: number;
+  trigger_ratio?: number;
+  target_ratio?: number;
+};
+export type AiContextBudget = {
+  source: "local" | "cloud" | "custom" | "none";
+  max_context_tokens: number | null;
+  max_input_bytes: number | null;
+  max_output_tokens: number | null;
+  safe_input_tokens: number | null;
+  trigger_tokens: number | null;
+  target_tokens: number | null;
+  trigger_bytes: number | null;
+  target_bytes: number | null;
+};
+export type AiTokenEstimateOptions = {
+  overhead_tokens?: number;
+  overhead_bytes?: number;
+  last_input_tokens?: number;
+  last_sent_bytes?: number;
+};
+export type AiTokenEstimate = { tokens: number; bytes: number; images: number };
+export type AiCompactOptions = AiTokenEstimateOptions & {
+  keep_recent?: number;
+  preserve_system?: boolean;
+  summary_header?: string;
+  level?: number;
+  force?: boolean;
+};
+export type AiCompactResult = {
+  input: InputPart[];
+  compacted: boolean;
+  omitted_parts: number;
+  estimated_tokens: number;
+  estimated_bytes: number;
+  level: number;
 };
 export type AiUsage = { object: "ai.usage"; rows: Array<{
   surface_id: string; surface_name: string; io: ModelIo | null; source: "cloud" | "local"; model: string;
@@ -68,7 +109,12 @@ export interface HostAi {
   jobCancel(requestId: string, options?: AiRequestOptions): Promise<InferenceResult>;
   slots(options?: AiRequestOptions): Promise<AiSlots>;
   usage(options?: AiRequestOptions): Promise<AiUsage>;
+  contextBudget(io: ModelIo, options?: AiContextBudgetOptions & AiRequestOptions): Promise<AiContextBudget>;
+  compactInput(input: InputPart[], io: ModelIo, options?: AiCompactOptions & AiContextBudgetOptions & AiRequestOptions): Promise<AiCompactResult>;
 }
+export declare function resolveContextBudget(slots: AiSlots, io: ModelIo, options?: AiContextBudgetOptions): AiContextBudget;
+export declare function estimateInputTokens(input: InputPart[], options?: AiTokenEstimateOptions): AiTokenEstimate;
+export declare function compactInputParts(input: InputPart[], budget?: Partial<AiContextBudget>, options?: AiCompactOptions): AiCompactResult;
 export declare function uncertainAiOperation(operation: AiEnvelope["operation"]): boolean;
 export declare function createHostAi(transport: (payload: AiEnvelope, options?: AiRequestOptions) => Promise<unknown>): HostAi;
 export declare function validateSchema(schema: unknown, rule: unknown, value: unknown, path?: string): void;

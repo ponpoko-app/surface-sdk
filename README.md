@@ -227,6 +227,40 @@ credentials. Existing browser surfaces can still use the Host-injected
 `window.ponpoko.ai`. Catalog release and package API validation belongs to
 Ponpoko Cloud.
 
+### Context limits & compaction
+
+Each configured Cloud or local model carries its own `context_length` (exposed on
+`host.ai.slots()`). When a surface calls `host.ai.invoke()` for text/chat
+workflows, the Host automatically compacts older conversation parts whenever the
+input approaches the active model's context ceiling (75% of safe input capacity)
+and retries with tighter compaction if the upstream still rejects with
+`context_length_exceeded` or `payload_too_large`.
+
+Surfaces that manage their own threads or want to preview/control compaction
+directly can call the SDK helpers from `@ponpoko-app/surface-sdk`,
+`@ponpoko-app/surface-sdk/ai`, or `@ponpoko-app/surface-sdk/backend`:
+
+```ts
+import {
+  estimateInputTokens,
+  compactInputParts,
+  resolveContextBudget,
+} from "@ponpoko-app/surface-sdk";
+
+const io = { inputs: ["text"], outputs: ["text"] };
+const budget = await host.ai.contextBudget(io);
+const est = estimateInputTokens(parts);
+const prepared =
+  budget.trigger_tokens && est.tokens >= budget.trigger_tokens
+    ? compactInputParts(parts, budget, { keep_recent: 4 })
+    : { input: parts, compacted: false };
+```
+
+`host.ai.compactInput(parts, io, options)` combines `contextBudget(io)` and
+`compactInputParts(...)` in one call. System parts, initial user intent and
+recent turns are preserved; Thai and other multi-byte scripts are estimated and
+trimmed safely on character boundaries.
+
 ## License
 
 The SDK code and documentation shipped in the npm package, including the

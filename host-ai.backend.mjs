@@ -1,5 +1,7 @@
 import { readFile } from "node:fs/promises";
-import { createHostAi, CONTRACT, uncertainAiOperation } from "./host-ai.mjs";
+import { createHostAi, CONTRACT, uncertainAiOperation, resolveContextBudget, estimateInputTokens, compactInputParts } from "./host-ai.mjs";
+
+export { resolveContextBudget, estimateInputTokens, compactInputParts };
 
 export function createBackendAi({ control = process.env.PONPOKO_HOST_CONTROL, surfaceId = process.env.PONPOKO_SURFACE_ID } = {}) {
   let confirmed = "";

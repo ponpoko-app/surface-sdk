@@ -21,7 +21,12 @@ Use `host.ai` or import `createBackendAi` from
 representative requests in `ai-requests.json`. Check setup without inference
 with `validate(request, true)`. An aborted or timed-out mutation can have an
 unknown outcome. Inspect the original receipt or side effect before retrying.
-Keep credentials and provider selection with the Host.
+Keep credentials and provider selection with the Host. The Host exposes per-slot
+`context_length` through `host.ai.slots()` / `host.ai.contextBudget(io)` and
+automatically compacts text/chat invocations near the active model's limit; use
+`host.ai.compactInput(input, io)` or `resolveContextBudget` /
+`estimateInputTokens` / `compactInputParts` when a surface wants custom thread
+compaction or context-usage indicators.
 
 Run the bundle's declared tests, inspect actual rendered pixels in the Host and
 play/replay its essential workflow. Record which checks actually ran. Static

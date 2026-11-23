@@ -1,6 +1,8 @@
 import { BROKER_CHANNEL, PROTOCOL_VERSION, READY_CONTROL, HELLO_CONTROL, PALETTE_CONTROL, DROP_CONTROL, isNamespace, isOperation } from "./protocol.mjs";
-import { CONTRACT, createHostAi, uncertainAiOperation } from "./host-ai.mjs";
+import { CONTRACT, createHostAi, uncertainAiOperation, resolveContextBudget, estimateInputTokens, compactInputParts } from "./host-ai.mjs";
 import { abortable, delay } from "./wait.mjs";
+
+export { resolveContextBudget, estimateInputTokens, compactInputParts };
 
 export class HostError extends Error {
   constructor(code, message, { retryable = false, request_id, cursor, snapshot, cloud_request_id, retry } = {}) {

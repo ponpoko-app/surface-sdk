@@ -192,3 +192,25 @@ test("the checker CLI validates and refuses bundles through a symlinked SDK path
     } finally { await rm(parent, { recursive: true, force: true }); }
   });
 });
+
+test("entry HTML local script, stylesheet and image references must exist in the bundle while external/data URLs are skipped", async () => {
+  await fixture(async directory => {
+    const html = await readFile(resolve(directory, "index.html"), "utf8");
+    const safeExternal = html.replace(
+      "</head>",
+      '<link href="https://example.invalid/style.css" rel="stylesheet"><img src="data:image/png;base64,iVBORw0KGgo="></head>',
+    );
+    await writeFile(resolve(directory, "index.html"), safeExternal);
+    const ok = await checkSurface(directory);
+    assert.equal(ok.status, "offline_contract_verified");
+
+    await writeFile(resolve(directory, "index.html"), html.replace("./main.mjs", "./missing.js"));
+    await assert.rejects(checkSurface(directory), /missing\.js/i);
+
+    await writeFile(resolve(directory, "index.html"), html.replace("</head>", '<link href="missing.css" rel="stylesheet"></head>'));
+    await assert.rejects(checkSurface(directory), /missing\.css/i);
+
+    await writeFile(resolve(directory, "index.html"), html.replace("</head>", '<link rel="stylesheet" href="../outside.css"></head>'));
+    await assert.rejects(checkSurface(directory), /outside\.css/i);
+  });
+});

@@ -107,15 +107,21 @@ test("a palette update removes stale Host roles and leaves author styles alone",
   const off = bindSurfaceTheme(client, root);
   try {
     deliver({ control: "ponpoko.host.palette", tokens: {}, appearance: {
-      theme: "dark", colors: { "--color-base": "#321c18" }, typography: { font: "serif", ui: "15px" },
+      theme: "dark", colors: { "--color-base": "#321c18", "--color-accent-gold": "#d8a84e", "--color-accent-lime": "#5aa469", "--color-fg-subtle": "#9d8d84" }, typography: { font: "serif", ui: "15px" },
     } });
     assert.equal(root.dataset.ppHostTheme, "dark");
     assert.equal(values.get("--pp-host-size-ui"), "15px");
     assert.equal(values.get("--pp-host-canvas"), "#321c18");
-    deliver({ control: "ponpoko.host.palette", tokens: { base: "#fafafa", accent: "#152642" } });
+    assert.equal(values.get("--pp-host-accent-secondary"), "#d8a84e");
+    assert.equal(values.get("--pp-host-success"), "#5aa469");
+    assert.equal(values.get("--pp-host-subtle"), "#9d8d84");
+    deliver({ control: "ponpoko.host.palette", tokens: { base: "#fafafa", accent: "#152642", accent_gold: "#9b7220", accent_lime: "#2e6b3f", fg_subtle: "#7a828c" } });
     assert.equal(root.dataset.ppHostTheme, "light");
     assert.equal(values.has("--pp-host-size-ui"), false);
     assert.equal(values.get("--pp-host-accent"), "#152642");
+    assert.equal(values.get("--pp-host-accent-secondary"), "#9b7220");
+    assert.equal(values.get("--pp-host-success"), "#2e6b3f");
+    assert.equal(values.get("--pp-host-subtle"), "#7a828c");
     assert.equal(values.get("--pp-accent"), "#6f2448");
   } finally { off(); client.dispose(); }
   assert.deepEqual([...values], [["--pp-accent", "#6f2448"]]);

@@ -1,13 +1,32 @@
 import { constants } from "node:fs";
+import { execFile } from "node:child_process";
 import { access, chmod, copyFile, cp, lstat, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { checkBundlePath, checkSurface } from "./scripts/check-surface.mjs";
 
+const execFileAsync = promisify(execFile);
 const sdkRoot = fileURLToPath(new URL(".", import.meta.url));
 const stylesheets = { tokens: "tokens.css", components: "components.css" };
 
+async function typecheckIfConfigured() {
+  const cwd = process.cwd();
+  const hasTsconfig = await stat(join(cwd, "tsconfig.json")).then(info => info.isFile(), () => false);
+  const tscName = process.platform === "win32" ? "tsc.cmd" : "tsc";
+  const tscBin = join(cwd, "node_modules", ".bin", tscName);
+  const hasTsc = await stat(tscBin).then(info => info.isFile(), () => false);
+  if (!hasTsconfig || !hasTsc) return;
+  try {
+    await execFileAsync(tscBin, ["--noEmit"], { cwd, encoding: "utf8", shell: process.platform === "win32" });
+  } catch (error) {
+    const output = `${error.stdout ?? ""}\n${error.stderr ?? ""}`.trim();
+    throw new Error(output ? `TypeScript check failed:\n${output}` : `TypeScript check failed: ${error.message}`);
+  }
+}
+
 export async function buildSurface({ entry = "main.ts", assets = [], backends = [], executables = {}, styles = ["tokens", "components"] } = {}) {
+  await typecheckIfConfigured();
   const manifestText = await readFile("surface.json", "utf8");
   const manifest = JSON.parse(manifestText);
   if (manifest.requires?.ai != null) assets = [...assets, "ai-contract.json", "ai-requests.json"];
@@ -92,5 +111,8 @@ async function replaceDist(stage) {
 
 async function bundle(entrypoints, outdir, target, naming) {
   const result = await Bun.build({ entrypoints, outdir, target, naming });
-  if (!result.success) throw new AggregateError(result.logs, "Surface build failed");
+  if (!result.success) {
+    const details = result.logs.map(log => log?.message || String(log)).filter(Boolean).join("\n");
+    throw new AggregateError(result.logs, details ? `Surface build failed:\n${details}` : "Surface build failed");
+  }
 }

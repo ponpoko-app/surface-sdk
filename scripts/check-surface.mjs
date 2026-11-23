@@ -1,5 +1,5 @@
 import { readFile, stat, realpath, lstat } from "node:fs/promises";
-import { resolve, relative, sep } from "node:path";
+import { dirname, resolve, relative, sep } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { pathToFileURL } from "node:url";
 import { SCHEMA, CONTRACT, validateSchema } from "../host-ai.mjs";
@@ -10,6 +10,46 @@ async function json(path) { return JSON.parse(await readFile(path, "utf8")); }
 
 export function checkBundlePath(value, field) {
   if (typeof value !== "string" || !value.trim() || /[\\:\u0000]/.test(value) || value.split("/").some(part => part === ".." || part === "." || !part)) throw new Error(`Invalid relative path: ${field}`);
+}
+
+function collectHtmlAssets(html) {
+  const refs = [];
+  for (const match of html.matchAll(/<script\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
+    refs.push(match[1] ?? match[2] ?? match[3] ?? "");
+  }
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = match[0];
+    if (!/\brel\s*=\s*(?:"[^"]*\bstylesheet\b[^"]*"|'[^']*\bstylesheet\b[^']*'|stylesheet\b)/i.test(tag)) continue;
+    const href = tag.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    if (href) refs.push(href[1] ?? href[2] ?? href[3] ?? "");
+  }
+  for (const match of html.matchAll(/<img\b[^>]*\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
+    refs.push(match[1] ?? match[2] ?? match[3] ?? "");
+  }
+  return refs;
+}
+
+async function checkEntryAssets(root, entryRel) {
+  const entryPath = resolve(root, entryRel);
+  const entryDir = dirname(entryPath);
+  const html = await readFile(entryPath, "utf8");
+  for (const raw of collectHtmlAssets(html)) {
+    const trimmed = raw.trim();
+    if (!trimmed || /^(?:#|\/\/|https?:|data:|blob:|mailto:|\$\{|{{)/i.test(trimmed)) continue;
+    const clean = trimmed.split(/[?#]/, 1)[0].trim();
+    if (!clean) continue;
+    let resolved;
+    try {
+      const target = resolve(entryDir, clean);
+      resolved = await realpath(target);
+    } catch {
+      throw new Error(`Missing local asset referenced in ${entryRel}: ${trimmed}`);
+    }
+    const rel = relative(root, resolved);
+    if (rel === ".." || rel.startsWith(`..${sep}`) || !(await stat(resolved)).isFile()) {
+      throw new Error(`Entry asset leaves the bundle or is not a regular file: ${trimmed}`);
+    }
+  }
 }
 
 export async function checkSurface(directory, { hostHello } = {}) {
@@ -44,6 +84,7 @@ export async function checkSurface(directory, { hostHello } = {}) {
     const rel = relative(root, path);
     if (rel === ".." || rel.startsWith(`..${sep}`) || !(await stat(path)).isFile()) throw new Error(`${field} leaves the bundle or is not a regular file`);
   }
+  await checkEntryAssets(root, manifest.entry);
   let samples = 0;
   if (manifest.requires !== undefined && manifest.requires !== null) {
     if (typeof manifest.requires !== "object" || Array.isArray(manifest.requires) || Object.keys(manifest.requires).some(key => key !== "ai")) throw new Error("Unknown requires contract");

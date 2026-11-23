@@ -4,11 +4,7 @@ Edit `index.html` and `main.ts` for the requested workflow. Call
 `host.ready()` when the screen is usable and dispose the client on page close.
 With no frame, the page opens as a standalone preview.
 
-- Add your own stylesheet as needed. The builder copies `surface.css` when present.
-  Link it in the HTML. Other static files can be listed under `assets` in `build.mjs`.
-- To inherit the live Host palette and typography, call `bindSurfaceTheme(host)`
-  and consume the `--pp-host-*` variables in your CSS. For the SDK tokens or
-  controls, select the styles in `build.mjs` and link them in the HTML. See the SDK README.
+- `build.mjs` includes the SDK `tokens` and `components` stylesheets (`sdk-tokens.css`, `sdk-components.css`), and `main.ts` calls `bindSurfaceTheme(host)` so `--pp-*` roles inherit the active Host palette and typography automatically. Add your own `surface.css` to refine or override roles locally; the builder copies it when present. Other static files can be listed under `assets` in `build.mjs`.
 - Keep the single navigation contribution in `surface.json`. To add Host AI later,
   declare `requires.ai`, copy the running Host schema from `@host/ai-contract.json`
   into source and add `ai-requests.json` with safe samples for your workflow.

@@ -1,6 +1,7 @@
 const colors = {
   canvas: "base", panel: "panel", surface: "surface", raised: "elevated", text: "fg",
-  muted: "fg-muted", accent: "accent", "on-accent": "on-accent", border: "border",
+  muted: "fg-muted", subtle: "fg-subtle", accent: "accent", "on-accent": "on-accent",
+  "accent-secondary": "accent-gold", success: "accent-lime", border: "border",
   "border-strong": "border-strong", focus: "ring", danger: "danger", attention: "attention",
   hover: "panel-hover", selection: "accent-soft",
 };

@@ -1,17 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-pp-ready="pending">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>__NAME__</title>
   <link rel="stylesheet" href="sdk-tokens.css">
   <link rel="stylesheet" href="sdk-components.css">
+  <link rel="stylesheet" href="surface.css">
   <script type="module" src="main.js"></script>
 </head>
 <body>
-  <main class="pp-panel">
-    <h1>__NAME__</h1>
-    <p id="host-status" class="pp-status" role="status"></p>
+  <main id="app" class="pp-shell">
+    <div id="host-banner" class="pp-banner" data-tone="error" role="alert" hidden></div>
+    <header class="pp-topbar">
+      <div>
+        <h1>__NAME__</h1>
+        <p id="host-status" class="pp-status" role="status"></p>
+      </div>
+    </header>
   </main>
 </body>
 </html>

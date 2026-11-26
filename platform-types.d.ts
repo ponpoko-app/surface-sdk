@@ -9,7 +9,7 @@ export interface ContextFileView {
   content: string;
 }
 
-export type SettingsDestination = "account" | "connections" | "usage" | "surfaces" | "palette" | "preferences" | "tools" | "history" | "model";
+export type SettingsDestination = "general" | "ai" | "surfaces" | "palette" | "tools" | "account" | "model";
 
 export interface FilePickRequest {
   mode: "open" | "save";

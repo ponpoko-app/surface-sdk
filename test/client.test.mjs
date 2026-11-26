@@ -115,7 +115,9 @@ test("a palette update removes stale Host roles and leaves author styles alone",
     assert.equal(values.get("--pp-host-accent-secondary"), "#d8a84e");
     assert.equal(values.get("--pp-host-success"), "#5aa469");
     assert.equal(values.get("--pp-host-subtle"), "#9d8d84");
-    deliver({ control: "ponpoko.host.palette", tokens: { base: "#fafafa", accent: "#152642", accent_gold: "#9b7220", accent_lime: "#2e6b3f", fg_subtle: "#7a828c" } });
+    deliver({ control: "ponpoko.host.palette", tokens: {}, appearance: {
+      theme: "light", colors: { "--color-accent": "#152642", "--color-accent-gold": "#9b7220", "--color-accent-lime": "#2e6b3f", "--color-fg-subtle": "#7a828c" },
+    } });
     assert.equal(root.dataset.ppHostTheme, "light");
     assert.equal(values.has("--pp-host-size-ui"), false);
     assert.equal(values.get("--pp-host-accent"), "#152642");

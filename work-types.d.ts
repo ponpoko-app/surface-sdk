@@ -67,6 +67,7 @@ export interface WorkIdentity {
 }
 
 export interface WorkLifecycle {
+  missing_build_tools?: string[] | null;
   status: WorkStatus;
   reason_code: string | null;
   human_message: string | null;
@@ -161,8 +162,28 @@ export interface SourceSpace {
   phase: "preparing" | "editing" | "preview" | "pending" | "applied" | "discarded" | "kept";
 }
 
+export interface CreationPreview {
+  surface_id: string;
+  runtime_id: string;
+  previous_runtime_ids?: string[];
+  preview_count: number;
+  source_path: string;
+  bundle_root: string;
+  bundle_digest: string;
+  runtime_digest: string;
+  source_digest: string;
+}
+
+export interface CreationHandoff {
+  runtime_id: string;
+  previous_runtime_ids?: string[];
+  preview_digest: string;
+}
+
 export interface WorkSnapshot {
   source_space?: SourceSpace | null;
+  creation_preview?: CreationPreview | null;
+  creation_handoff?: CreationHandoff | null;
   input_request?: WorkInputRequest | null;
   layout_review?: import("./work-layout.d.ts").LayoutReview | null;
   protocol_version: number;

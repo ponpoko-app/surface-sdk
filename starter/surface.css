@@ -1,0 +1,7 @@
+:root {
+  --surface-max-width: 72rem;
+}
+
+.pp-shell {
+  --pp-shell-max: var(--surface-max-width);
+}

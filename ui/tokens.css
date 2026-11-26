@@ -21,6 +21,7 @@
   --pp-success-soft: color-mix(in srgb, var(--pp-success) 13%, transparent);
   --pp-attention-soft: color-mix(in srgb, var(--pp-attention) 14%, transparent);
   --pp-danger-soft: color-mix(in srgb, var(--pp-danger) 13%, transparent);
+  --pp-backdrop: rgba(18, 24, 16, .42);
   --pp-font: var(--pp-host-font, ui-sans-serif, "Noto Sans Thai", "Sarabun", system-ui, -apple-system, sans-serif);
   --pp-font-heading: var(--pp-font);
   --pp-font-mono: var(--pp-host-mono, ui-monospace, SFMono-Regular, monospace);
@@ -33,6 +34,7 @@
   --pp-size-meta: .78rem;
   --pp-heading-weight: 650;
   --pp-leading: 1.55;
+  --pp-leading-thai: 1.68;
   --pp-space-1: .25rem;
   --pp-space-2: .5rem;
   --pp-space-3: .75rem;
@@ -58,6 +60,7 @@
 
 :root:where([data-pp-host-theme="dark"]) {
   --pp-scheme: dark;
+  --pp-backdrop: rgba(0, 0, 0, .62);
   --pp-shadow-sm: 0 1px 2px rgba(0, 0, 0, .28), 0 1px 1px rgba(0, 0, 0, .18);
   --pp-shadow-md: 0 6px 16px rgba(0, 0, 0, .36), 0 2px 4px rgba(0, 0, 0, .24);
   --pp-shadow-lg: 0 14px 32px rgba(0, 0, 0, .48), 0 3px 8px rgba(0, 0, 0, .3);

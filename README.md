@@ -28,7 +28,7 @@ path, makes it executable on Unix, and carries an input `.exe` suffix into the
 staged manifest. It validates the full staged bundle before replacing `dist/`.
 
 Once published, an existing project can run
-`bun add --exact @ponpoko-app/surface-sdk@1.3.0`. Use the desktop's pinned tarball
+`bun add --exact @ponpoko-app/surface-sdk@1.3.1`. Use the desktop's pinned tarball
 for new surfaces and offline builds. Keep the resolved dependency and lockfile
 together. The SDK version describes the source toolchain. Broker protocol 1 and
 the declared Host AI contract version and digest govern runtime compatibility.

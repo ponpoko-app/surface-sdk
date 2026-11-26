@@ -20,10 +20,10 @@ jobs:
       include: ${{ steps.scan.outputs.include }}
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24.22.1
 
@@ -63,7 +63,7 @@ jobs:
       matrix: ${{ fromJSON(needs.preflight.outputs.include) }}
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: bun
         uses: oven-sh/setup-bun@v2
@@ -81,7 +81,7 @@ jobs:
         run: test -f dist/surface.json
 
       - name: draft bundle artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: surface-draft-${{ matrix.target }}
           path: dist

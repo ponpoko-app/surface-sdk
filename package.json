@@ -1,6 +1,6 @@
 {
   "name": "@ponpoko-app/surface-sdk",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "type": "module",
   "description": "Build Ponpoko surfaces with a pinned starter, native controls and the typed Host broker.",
   "engines": {

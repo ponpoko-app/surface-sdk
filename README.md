@@ -28,7 +28,7 @@ path, makes it executable on Unix, and carries an input `.exe` suffix into the
 staged manifest. It validates the full staged bundle before replacing `dist/`.
 
 Once published, an existing project can run
-`bun add --exact @ponpoko-app/surface-sdk@1.3.1`. Use the desktop's pinned tarball
+`bun add --exact @ponpoko-app/surface-sdk@1.3.2`. Use the desktop's pinned tarball
 for new surfaces and offline builds. Keep the resolved dependency and lockfile
 together. The SDK version describes the source toolchain. Broker protocol 1 and
 the declared Host AI contract version and digest govern runtime compatibility.
@@ -107,13 +107,17 @@ import { createSurfaceStorage } from "@ponpoko-app/surface-sdk/storage";
 const storage = createSurfaceStorage(host);
 const draft = (await storage.get("draft")) ?? "";
 await storage.set("draft", draft);
+const items = await storage.getJson("items", []);
+await storage.setJson("items", items);
+await storage.remove("draft");
 ```
 
 The client routes requests through the registered surface's broker to Host
 storage and its backup path. Use a desktop Host that advertises the storage
 operations. A standalone preview can use a client backed by `createMockHost`.
-`get` returns `null` for an absent key. `set` and `remove` resolve after the Host
-confirms. Keep the draft visible on failure. For `HostError` with
+`get` returns `null` for an absent key, and `getJson(key, fallback)` returns
+`fallback` (default `null`) when absent or parses the stored JSON string. `set`,
+`setJson`, and `remove` resolve after the Host confirms. Keep the draft visible on failure. For `HostError` with
 `code: "unknown_outcome"`, read the stored value before retrying a write.
 The Host limits each value to 1 MiB and the entire store to 5 MiB.
 

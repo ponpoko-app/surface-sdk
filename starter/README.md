@@ -23,5 +23,5 @@ while a surface input has focus.
 Use `host.call(namespace, operation, payload)` for the typed broker,
 `host.onPalette`, `host.onDrop` and `host.onEvent` for pushes and
 `host.workEvents(id, { signal })` for the work cursor. Use `createSurfaceStorage(host)`
-from the SDK's `/storage` module for small values that should follow the Host's
-backup and restore path. Keep the draft until the write succeeds.
+from the SDK's `/storage` module (`get`, `set`, `remove`, `getJson`, `setJson`)
+for small values that should follow the Host's backup and restore path. Keep the draft until the write succeeds.

@@ -19,6 +19,7 @@ export interface HostOperations {
     "attachments.read": [{ paths: string[] }, ContextFileView[]];
     "attachments.paste-image": [undefined, ContextFileView];
     "files.save": [{ name?: string }, string | null];
+    "files.write-text": [{ name?: string; content: string }, string | null];
     "preferences.list": [undefined, Array<{ key: string; value: string }>];
     "settings.open": [{ destination: SettingsDestination }, true];
     "link.open": [{ href: string }, true];

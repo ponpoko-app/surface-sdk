@@ -11,6 +11,7 @@
       "attachments.read",
       "attachments.paste-image",
       "files.save",
+      "files.write-text",
       "preferences.list",
       "settings.open",
       "link.open",

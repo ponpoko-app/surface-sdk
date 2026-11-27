@@ -1,10 +1,10 @@
 import { constants } from "node:fs";
 import { execFile } from "node:child_process";
-import { access, chmod, copyFile, cp, lstat, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { access, chmod, copyFile, cp, lstat, mkdir, mkdtemp, rename, rm, stat, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { checkBundlePath, checkSurface } from "./scripts/check-surface.mjs";
+import { checkBundleNode, checkBundlePath, checkSurface, readBundleText } from "./scripts/check-surface.mjs";
 
 const execFileAsync = promisify(execFile);
 const sdkRoot = fileURLToPath(new URL(".", import.meta.url));
@@ -27,7 +27,7 @@ async function typecheckIfConfigured() {
 
 export async function buildSurface({ entry = "main.ts", assets = [], backends = [], executables = {}, styles = ["tokens", "components"] } = {}) {
   await typecheckIfConfigured();
-  const manifestText = await readFile("surface.json", "utf8");
+  const manifestText = await readBundleText(process.cwd(), "surface.json", 256 * 1024);
   const manifest = JSON.parse(manifestText);
   if (manifest.requires?.ai != null) assets = [...assets, "ai-contract.json", "ai-requests.json"];
 
@@ -40,7 +40,8 @@ export async function buildSurface({ entry = "main.ts", assets = [], backends = 
     for (const path of new Set(["index.html", ...assets])) {
       if (path === "surface.json") continue;
       if (path !== ".ponpoko-scaffold.json" && !/^[a-z0-9_-][a-z0-9_.-]*(?:\/[a-z0-9_-][a-z0-9_.-]*)*$/i.test(path)) throw new Error(`Invalid build asset path: ${path}`);
-      await cp(path, join(stage, path), { recursive: true, verbatimSymlinks: true });
+      const source = await checkBundleNode(process.cwd(), path, "Build asset", { allowDirectory: true });
+      await cp(source, join(stage, path), { recursive: true, verbatimSymlinks: true });
     }
     for (const style of new Set(styles)) {
       if (!Object.hasOwn(stylesheets, style)) throw new Error(`Unknown SDK stylesheet: ${style}`);
@@ -68,7 +69,7 @@ export async function buildSurface({ entry = "main.ts", assets = [], backends = 
 async function stageExecutable(stage, program, kind, source) {
   const command = program?.command;
   checkBundlePath(command, `${kind}.command`);
-  if (!(await stat(source)).isFile()) throw new Error(`The ${kind} executable must be a regular file`);
+  if (!(await lstat(source)).isFile()) throw new Error(`The ${kind} executable must be a regular file`);
   const extension = extname(source).toLowerCase();
   if (extension === ".exe" && extname(command).toLowerCase() !== ".exe") program.command = command + ".exe";
   const parts = program.command.split("/");

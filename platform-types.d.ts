@@ -7,6 +7,7 @@ export interface ContextFileView {
   kind: ContextKind;
   media_type: string | null;
   content: string;
+  image_base64?: string;
 }
 
 export type SettingsDestination = "general" | "ai" | "surfaces" | "palette" | "tools" | "account" | "model";

@@ -1,4 +1,5 @@
-import { readFile, stat, realpath, lstat } from "node:fs/promises";
+import { constants } from "node:fs";
+import { readFile, open, realpath, lstat } from "node:fs/promises";
 import { dirname, resolve, relative, sep } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { pathToFileURL } from "node:url";
@@ -8,8 +9,56 @@ import { checkSecrets } from "./secrets.mjs";
 
 async function json(path) { return JSON.parse(await readFile(path, "utf8")); }
 
+const windowsDevice = /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i;
+
 export function checkBundlePath(value, field) {
-  if (typeof value !== "string" || !value.trim() || /[\\:\u0000]/.test(value) || value.split("/").some(part => part === ".." || part === "." || !part)) throw new Error(`Invalid relative path: ${field}`);
+  if (typeof value !== "string" || !value.trim() || /[\\:\u0000-\u001f<>|?*"]/.test(value) ||
+      value.split("/").some(part => !part || /[. ]$/.test(part) || windowsDevice.test(part))) {
+    throw new Error(`Invalid relative path: ${field}`);
+  }
+}
+
+export async function checkBundleNode(root, value, field, { allowDirectory = false } = {}) {
+  checkBundlePath(value, field);
+  const parts = value.split("/");
+  let path = root;
+  for (const [index, part] of parts.entries()) {
+    path = resolve(path, part);
+    const entry = await lstat(path);
+    const leaf = index === parts.length - 1;
+    if (entry.isSymbolicLink() ||
+        (leaf ? !(entry.isFile() || (allowDirectory && entry.isDirectory())) : !entry.isDirectory())) {
+      throw new Error(`${field} leaves the bundle or is not an allowed regular file or directory`);
+    }
+  }
+  return path;
+}
+
+export async function readBundleText(root, name, limit) {
+  const path = await checkBundleNode(root, name, name);
+  const file = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
+  try {
+    const info = await file.stat();
+    if (!info.isFile()) throw new Error(`${name} must be a regular file`);
+    if (info.size > limit) throw new Error(`${name} exceeds its size limit`);
+    const bytes = Buffer.alloc(limit + 1);
+    let length = 0;
+    while (length < bytes.length) {
+      const { bytesRead } = await file.read(bytes, length, bytes.length - length);
+      if (!bytesRead) break;
+      length += bytesRead;
+    }
+    if (length > limit) throw new Error(`${name} exceeds its size limit`);
+    return bytes.subarray(0, length).toString("utf8");
+  } finally {
+    await file.close();
+  }
+}
+
+async function bundleJson(root, name) {
+  const text = await readBundleText(root, name, 256 * 1024);
+  try { return JSON.parse(text); }
+  catch { throw new Error(`${name} is not valid JSON`); }
 }
 
 function collectHtmlAssets(html) {
@@ -32,29 +81,28 @@ function collectHtmlAssets(html) {
 async function checkEntryAssets(root, entryRel) {
   const entryPath = resolve(root, entryRel);
   const entryDir = dirname(entryPath);
-  const html = await readFile(entryPath, "utf8");
+  const html = await readBundleText(root, entryRel, 2 * 1024 * 1024);
   for (const raw of collectHtmlAssets(html)) {
     const trimmed = raw.trim();
     if (!trimmed || /^(?:#|\/\/|https?:|data:|blob:|mailto:|\$\{|{{)/i.test(trimmed)) continue;
     const clean = trimmed.split(/[?#]/, 1)[0].trim();
     if (!clean) continue;
-    let resolved;
-    try {
-      const target = resolve(entryDir, clean);
-      resolved = await realpath(target);
-    } catch {
-      throw new Error(`Missing local asset referenced in ${entryRel}: ${trimmed}`);
+    const rel = relative(root, resolve(entryDir, clean));
+    if (rel === ".." || rel.startsWith(`..${sep}`)) {
+      throw new Error(`Entry asset leaves the bundle: ${trimmed}`);
     }
-    const rel = relative(root, resolved);
-    if (rel === ".." || rel.startsWith(`..${sep}`) || !(await stat(resolved)).isFile()) {
-      throw new Error(`Entry asset leaves the bundle or is not a regular file: ${trimmed}`);
+    try { await checkBundleNode(root, rel.split(sep).join("/"), "Entry asset"); }
+    catch (error) {
+      if (error.code === "ENOENT") throw new Error(`Missing local asset referenced in ${entryRel}: ${trimmed}`);
+      throw error;
     }
   }
 }
 
 export async function checkSurface(directory, { hostHello } = {}) {
   const root = await realpath(directory);
-  const manifest = await json(resolve(root, "surface.json"));
+  const manifest = await bundleJson(root, "surface.json");
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) throw new Error("surface.json must contain an object");
   const keys = ["id", "name", "version", "entry", "description", "contributes", "backend", "methods", "cli", "requires"];
   for (const key of Object.keys(manifest)) if (!keys.includes(key)) throw new Error(`Unknown manifest field: ${key}`);
   if (typeof manifest.id !== "string" || manifest.id.length > 64 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.id) || manifest.id === "surfaces") throw new Error("Invalid or reserved surface id");
@@ -78,25 +126,16 @@ export async function checkSurface(directory, { hostHello } = {}) {
   const methods = manifest.methods === undefined ? [] : manifest.methods;
   if (!Array.isArray(methods) || methods.length > 64 || new Set(methods).size !== methods.length || methods.some(method => typeof method !== "string" || method.length > 64 || !/^[a-z0-9][a-z0-9_]*(?:\.[a-z0-9][a-z0-9_]*){1,3}$/.test(method))) throw new Error("Invalid backend methods");
   if (methods.length && !manifest.backend) throw new Error("Declared methods require a backend");
-  for (const [field, value] of paths) {
-    checkBundlePath(value, field);
-    const path = await realpath(resolve(root, value));
-    const rel = relative(root, path);
-    if (rel === ".." || rel.startsWith(`..${sep}`) || !(await stat(path)).isFile()) throw new Error(`${field} leaves the bundle or is not a regular file`);
-  }
+  for (const [field, value] of paths) await checkBundleNode(root, value, field);
   await checkEntryAssets(root, manifest.entry);
   let samples = 0;
   if (manifest.requires !== undefined && manifest.requires !== null) {
     if (typeof manifest.requires !== "object" || Array.isArray(manifest.requires) || Object.keys(manifest.requires).some(key => key !== "ai")) throw new Error("Unknown requires contract");
     if (manifest.requires.ai !== undefined && manifest.requires.ai !== null) {
       if (manifest.requires.ai !== CONTRACT.version) throw new Error("ai_contract_mismatch: unsupported AI version");
-      for (const file of ["ai-contract.json", "ai-requests.json"]) {
-        const info = await lstat(resolve(root, file));
-        if (!info.isFile() || info.isSymbolicLink() || info.size > 262144) throw new Error(`${file} must be a regular file at most 256 KiB`);
-      }
-      const schema = await json(resolve(root, "ai-contract.json"));
+      const schema = await bundleJson(root, "ai-contract.json");
       if (!isDeepStrictEqual(schema, SCHEMA)) throw new Error("ai_contract_mismatch: schema differs from this SDK");
-      const requests = await json(resolve(root, "ai-requests.json"));
+      const requests = await bundleJson(root, "ai-requests.json");
       if (!Array.isArray(requests) || !requests.length || requests.length > 64) throw new Error("Provide 1 to 64 representative AI requests");
       for (const request of requests) validateSchema(SCHEMA, SCHEMA.$defs.InferenceRequest, request);
       samples = requests.length;

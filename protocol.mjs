@@ -26,7 +26,7 @@ export const NAMESPACES = [HOST_PLATFORM, HOST_WORK, HOST_SURFACE]         ;
 
 export const PLATFORM_OPERATIONS = [
   "research.search", "ai.request", "protocol.info", "providers.list", "attachments.pick", "attachments.read", "attachments.paste-image",
-  "files.save", "preferences.list", "settings.open", "link.open", "storage.get", "storage.set", "storage.remove",
+  "files.save", "files.write-text", "preferences.list", "settings.open", "link.open", "storage.get", "storage.set", "storage.remove",
 ]         ;
 
 

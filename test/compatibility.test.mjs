@@ -58,6 +58,20 @@ test("protocol and AI digest mismatches fail without model calls", () => {
   assert.equal(checkHost(hello, { ai: true }).paid_requests, 0);
 });
 
+test("the bundle checker refuses linked and oversized metadata", async () => {
+  await fixture(async dir => {
+    const manifest = join(dir, "surface.json");
+    const copy = join(dir, "manifest-copy.json");
+    await writeFile(copy, await readFile(manifest));
+    await rm(manifest);
+    await symlink(copy, manifest);
+    await assert.rejects(checkSurface(dir), /leaves the bundle/);
+    await rm(manifest);
+    await writeFile(manifest, " ".repeat(256 * 1024 + 1));
+    await assert.rejects(checkSurface(dir), /size limit|too large/);
+  });
+});
+
 test("browser transport rejects a different message source", () => {
   let deliver;
   const parent = { postMessage() {} };
